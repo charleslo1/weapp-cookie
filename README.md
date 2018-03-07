@@ -39,7 +39,7 @@ Page({
             },
             success: function (res) {
                 /*
-                 * 登录成功后 wxapp-cookie-shim 会自动保存后端发送的所有Cookie（比如：SessionID）
+                 * 接口调用成功后 wxapp-cookie-shim 会自动保存后端发送的所有Cookie（比如：SessionID）
                  * 并在后续的所有请求中带上，以保证基于 cookie 的服务器会话机制不会失效，
                  * 实现与 web 端共用会话机制（无需再手动维护 3rd_session_key） 
                  */
