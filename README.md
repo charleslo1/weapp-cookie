@@ -5,6 +5,9 @@
 
 ``` sh
 npm install wxapp-cookie-shim --save
+
+// 需要复制到 vendor 文件夹，避免小程序可能不能找到文件
+cp -rf ./node_modules/ ./vendor/
 ```
 
 # Usage
@@ -13,7 +16,7 @@ npm install wxapp-cookie-shim --save
 
 ``` js
 // app.js
-import './node_modules/wxapp-cookie-shim/index'
+import './vendor/wxapp-cookie-shim/index'
 
 App({
     onLaunch: function () { }
