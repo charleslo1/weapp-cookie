@@ -44,18 +44,7 @@ class CookieStore {
    */
   readFromStorage() {
     let cookies = wx.getStorageSync(this.storageKey) || []
-    this.cookies = cookies.map((item) => {
-      let cookie = new Cookie()
-      cookie.key = item.key
-      cookie.value = item.value
-      // other
-      cookie.domain = item.domain
-      cookie.path = item.path
-      cookie.expires = item.expires ? new Date(item.expires) : null
-      cookie.maxAge = item.maxAge ? parseInt(item.maxAge) : 0
-      cookie.httpOnly = !!item.httpOnly
-      return cookie
-    })
+    this.cookies = cookies.map((item) => new Cookie(item))
     return this.cookies
   }
 
@@ -86,7 +75,7 @@ class CookieStore {
     })
 
     // parse
-    return fixCookies.map((item) => new Cookie(domain, item))
+    return fixCookies.map((item) => new Cookie({ domain: domain }).set(item))
   }
 }
 
@@ -97,23 +86,21 @@ class Cookie {
   /**
    * 构造函数
    */
-  constructor(domain, setCookieStr) {
-    this.key = ''
-    this.value = ''
+  constructor(obj) {
+    this.key = obj.key || ''
+    this.value = obj.value || ''
     // other
-    this.domain = domain
-    this.path = ''
-    this.expires = null
-    this.maxAge = 0
-    this.httpOnly = false
-
-    this.parse(setCookieStr)
+    this.domain = obj.domain || ''
+    this.path = obj.path || ''
+    this.expires = obj.expires ? new Date(obj.expires) : null
+    this.maxAge = obj.maxAge ? parseInt(obj.maxAge) : 0
+    this.httpOnly = !!obj.httpOnly
   }
 
   /**
-   * 将 set-cookie 字符串转换为 Cookie 对象
+   * 设置 cookie, 将 set-cookie 字符串转换为 Cookie 对象
    */
-  parse(setCookieStr = '') {
+  set(setCookieStr = '') {
     let arr = setCookieStr.split(/\s*\;\s*/g)
 
     arr.forEach((item, i) => {
