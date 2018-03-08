@@ -11,20 +11,19 @@ class CookieStore {
   }
 
   /**
-   * 获取 Cookies
+   * 获取 cookies
    */
   getCookies(domain) {
     let filterCookies = this.cookies.filter((item) => {
-      if (item.domain != domain) return false
-      if (item.expires && item.expires < new Date()) return false
-      return true
+      if (item.domain !== domain) return false
+      return item.validate()
     })
 
     return filterCookies.map((item) => item.toString()).join('; ')
   }
 
   /**
-   * 设置 Cookies
+   * 设置 cookies
    */
   setCookies(domain, cookieStr) {
     let parsedCookies = this.parseCookies(domain, cookieStr)
@@ -33,14 +32,18 @@ class CookieStore {
   }
 
   /**
-   * 保存到 Storage
+   * 将 cookies 保存到 Storage
    */
   saveToStorage() {
-    wx.setStorageSync(this.storageKey, this.cookies)
+    // 只存储可持久化 cookie
+    let saveCookies = this.cookies.filter((item) => {
+      return item.isPersistence()
+    })
+    wx.setStorageSync(this.storageKey, saveCookies)
   }
 
   /**
-   * 从 Storage 读取
+   * 从 Storage 读取 cookies
    */
   readFromStorage() {
     let cookies = wx.getStorageSync(this.storageKey) || []
@@ -49,10 +52,10 @@ class CookieStore {
   }
 
   /**
-   * 添加 Cookies
+   * 清除 cookies
    */
   clearCookies (domain) {
-    this.cookies = []
+    this.cookies = domain ? this.cookies.filter((item) => item.domain !== domain) : []
     this.saveToStorage()
   }
 
@@ -93,16 +96,18 @@ class Cookie {
     this.domain = obj.domain || ''
     this.path = obj.path || ''
     this.expires = obj.expires ? new Date(obj.expires) : null
-    this.maxAge = obj.maxAge ? parseInt(obj.maxAge) : 0
+    this.maxAge = obj.maxAge ? parseInt(obj.maxAge) : null
     this.httpOnly = !!obj.httpOnly
+    // 记录时间
+    this.dateTime = obj.dateTime ? new Date(obj.dateTime) : new Date()
   }
 
   /**
    * 设置 cookie, 将 set-cookie 字符串转换为 Cookie 对象
    */
   set(setCookieStr = '') {
+    // 解析并设置 cookie 属性值
     let arr = setCookieStr.split(/\s*\;\s*/g)
-
     arr.forEach((item, i) => {
       let temp = item.split('=')
       if (i === 0) {
@@ -110,26 +115,59 @@ class Cookie {
         this.value = temp[1]
       } else {
         let prop = temp[0]
+        let value = temp[1]
         prop = prop.replace(/-/g, '').replace(/^(\S)/g, (prop[0] || '').toLowerCase())
 
         switch (prop) {
           case 'maxAge':
-            this.maxAge = parseInt(temp[1])
+            this.maxAge = parseInt(value)
             break
           case 'expires':
-            this.expires = new Date(temp[1])
+            this.expires = new Date(value)
             break
           case 'httpOnly':
             this.httpOnly = true
             break
           default:
-            this[prop] = temp[1]
+            this[prop] = value
             break
         }
       }
     })
 
+    // 更新设置时间
+    this.dateTime = new Date()
+
     return this
+  }
+
+  /**
+   * 验证 cookie 是否还有效
+   * @return {Boolean} 是否有效
+   */
+  validate () {
+    // maxAge 为 0，无效
+    if (this.maxAge === 0) {
+      return false
+    }
+    // 存活秒数超出 maxAge，无效
+    if (this.maxAge > 0) {
+      let seconds = (Date.now() - this.dateTime.getTime()) / 1000
+      return seconds < this.maxAge
+    }
+    // expires 小于当前时间，无效
+    if (item.expires && item.expires < new Date()) {
+      return false
+    }
+    return true
+  }
+
+  /**
+   * 验证 cookie 是否可持久化
+   * @return {Boolean} 是否可持久化
+   */
+  isPersistence () {
+    return item.maxAge ? item.maxAge > 0 : true
   }
 
   /**

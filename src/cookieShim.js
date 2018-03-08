@@ -47,7 +47,7 @@ const cookieStore = (function (wx, request) {
     request(options)
   }
 
-  // 覆盖微信原生 request
+  // 使用 requestProxy 覆盖微信原生 request
   Object.defineProperties(wx, {
      request: {
         value: requestProxy
