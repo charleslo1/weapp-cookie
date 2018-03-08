@@ -28,18 +28,13 @@ const cookieStore = (function (wx, request) {
       options.header = options.header || {}
       options.header['Cookie'] = requestCookies
 
-      // 原始成功回调
-      let successHandler = options.success
-
-      // 代理原始成功回调
-      options.success = function (response) {
+      // 请求完成回调
+      options.complete = function (response) {
         // 获取响应 cookies
         let responseCookies = response.header['set-cookie']
         console.info('response cookies: ', responseCookies)
         // 设置 cookies，以便下次请求带上
         cookieStore.setCookies(domain, responseCookies)
-        // 调用原始回调
-        successHandler && successHandler(response)
       }
     }
 
