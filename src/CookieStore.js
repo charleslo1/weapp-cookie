@@ -35,6 +35,10 @@ class CookieStore {
    * 将 cookies 保存到 Storage
    */
   saveToStorage() {
+    // 清除无效 cookie
+    this.cookies = this.cookies.filter((item) => {
+      return item.validate()
+    })
     // 只存储可持久化 cookie
     let saveCookies = this.cookies.filter((item) => {
       return item.isPersistence()
@@ -156,7 +160,7 @@ class Cookie {
       return seconds < this.maxAge
     }
     // expires 小于当前时间，无效
-    if (item.expires && item.expires < new Date()) {
+    if (this.expires && this.expires < new Date()) {
       return false
     }
     return true
@@ -167,7 +171,7 @@ class Cookie {
    * @return {Boolean} 是否可持久化
    */
   isPersistence () {
-    return item.maxAge ? item.maxAge > 0 : true
+    return this.maxAge ? this.maxAge > 0 : true
   }
 
   /**
