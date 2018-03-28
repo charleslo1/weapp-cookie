@@ -28,13 +28,15 @@ const cookieStore = (function (wx, request) {
       options.header = options.header || {}
       options.header['Cookie'] = requestCookies
 
-      // 请求完成回调
-      options.complete = function (response) {
+      // 请求成功回调
+      let successCallback = options.success
+      options.success = function (response) {
         // 获取响应 cookies
         let responseCookies = response.header['set-cookie']
         console.info('response cookies: ', responseCookies)
         // 设置 cookies，以便下次请求带上
         cookieStore.setCookies(domain, responseCookies)
+        successCallback && successCallback(response)
       }
     }
 

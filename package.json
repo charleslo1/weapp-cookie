@@ -1,6 +1,6 @@
 {
   "name": "wxapp-cookie-shim",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "> 一行代码让微信小程序支持 cookie，以保证基于 cookie 的服务器会话机制不会失效，与 web 端共用会话机制",
   "main": "index.js",
   "scripts": {

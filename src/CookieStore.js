@@ -14,21 +14,44 @@ class CookieStore {
    * 获取 cookies
    */
   getCookies(domain) {
+    // 获取符合条件的 cookie
     let filterCookies = this.cookies.filter((item) => {
       if (item.domain !== domain) return false
       return item.validate()
     })
 
-    return filterCookies.map((item) => item.toString()).join('; ')
+    // 转化为 request cookies 字符串
+    return this.stringify(filterCookies)
   }
 
   /**
    * 设置 cookies
    */
   setCookies(domain, cookieStr) {
-    let parsedCookies = this.parseCookies(domain, cookieStr)
+    // 转换为 cookie 对象数组
+    let parsedCookies = this.parse(domain, cookieStr)
+
+    // 删除旧的同名 cookie
+    let keys = parsedCookies.map((item) => item.key)
+    this.removeCookies(domain, keys)
+
+    // 设置新 cookie
     this.cookies = this.cookies.concat(parsedCookies)
+
+    // 保存到本地存储
     this.saveToStorage()
+  }
+
+  /**
+   * 删除 cookies
+   * @param  {String} domain 域名
+   * @param  {Array} keys   cookie 键列表
+   */
+  removeCookies(domain, keys) {
+    // 删除 cookies
+    this.cookies = this.cookies.filter((item) => {
+      return !(item.domain === domain && keys.indexOf(item.key) >= 0)
+    })
   }
 
   /**
@@ -39,10 +62,13 @@ class CookieStore {
     this.cookies = this.cookies.filter((item) => {
       return item.validate()
     })
+
     // 只存储可持久化 cookie
     let saveCookies = this.cookies.filter((item) => {
       return item.isPersistence()
     })
+
+    // 保存到本地存储
     wx.setStorageSync(this.storageKey, saveCookies)
   }
 
@@ -64,9 +90,9 @@ class CookieStore {
   }
 
   /**
-   * 切分 set-cookie 字段
+   * 解析 response set-cookie 字段
    */
-  parseCookies(domain, setCookieStr = '') {
+  parse(domain, setCookieStr = '') {
     // 切分 cookies
     let cookies = setCookieStr.split(',');
     let fixCookies = [];
@@ -83,6 +109,15 @@ class CookieStore {
 
     // parse
     return fixCookies.map((item) => new Cookie({ domain: domain }).set(item))
+  }
+
+  /**
+   * 将 cookies 字符串化，转化为 request cookies 字符串
+   * @param  {Array} cookies cookie对象数组
+   * @return {String}        cookie字符串
+   */
+  stringify (cookies) {
+    return cookies.map((item) => item.toString()).join('; ')
   }
 }
 
