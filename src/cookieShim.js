@@ -16,24 +16,27 @@ const cookieStore = (function (wx, request) {
   function requestProxy (options) {
     // 是否启用 cookie（默认 true）
     options.cookie = options.cookie == undefined || !!options.cookie
+    options.dataType = options.dataType || 'json'
     if (options.cookie) {
       // 域名
       let domain = new URL(options.url).host
 
       // 获取请求 cookies
       let requestCookies = cookieStore.getCookies(domain)
-      console.info('request cookies: ', requestCookies)
 
       // 请求时带上设置的 cookies
       options.header = options.header || {}
       options.header['Cookie'] = requestCookies
+      options.header['X-Requested-With'] = 'XMLHttpRequest'
+      if (options.dataType === 'json') {
+        options.header['Accept'] = 'application/json, text/plain, */*'
+      }
 
       // 请求成功回调
       let successCallback = options.success
       options.success = function (response) {
         // 获取响应 cookies
         let responseCookies = response.header['set-cookie']
-        console.info('response cookies: ', responseCookies)
         // 设置 cookies，以便下次请求带上
         cookieStore.setCookies(domain, responseCookies)
         successCallback && successCallback(response)
