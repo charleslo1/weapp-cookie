@@ -5,7 +5,7 @@ class Cookie {
   /**
    * 构造函数
    */
-  constructor(obj) {
+  constructor (obj) {
     this.key = obj.key || ''
     this.value = obj.value || ''
     // other
@@ -21,9 +21,9 @@ class Cookie {
   /**
    * 设置 cookie, 将 set-cookie 字符串转换为 Cookie 对象
    */
-  set(setCookieStr = '') {
+  set (setCookieStr = '') {
     // 解析并设置 cookie 属性值
-    let arr = setCookieStr.split(/\s*\;\s*/g)
+    let arr = setCookieStr.split(/\s*\\;\s*/g)
     arr.forEach((item, i) => {
       let temp = item.split('=')
       if (i === 0) {

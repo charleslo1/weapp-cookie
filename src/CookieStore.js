@@ -15,7 +15,7 @@ class CookieStore {
   /**
    * 获取 cookies
    */
-  getCookies(domain) {
+  getCookies (domain) {
     // 获取符合条件的 cookie
     let filterCookies = this.cookies.filter((item) => {
       if (item.domain !== domain) return false
@@ -29,7 +29,7 @@ class CookieStore {
   /**
    * 设置 cookies
    */
-  setCookies(domain, cookieStr) {
+  setCookies (domain, cookieStr) {
     // 转换为 cookie 对象数组
     let parsedCookies = this.parse(domain, cookieStr)
 
@@ -49,7 +49,7 @@ class CookieStore {
    * @param  {String} domain 域名
    * @param  {Array} keys   cookie 键列表
    */
-  removeCookies(domain, keys) {
+  removeCookies (domain, keys) {
     // 删除 cookies
     this.cookies = this.cookies.filter((item) => {
       return !(item.domain === domain && keys.indexOf(item.key) >= 0)
@@ -59,7 +59,7 @@ class CookieStore {
   /**
    * 将 cookies 保存到 Storage
    */
-  saveToStorage() {
+  saveToStorage () {
     // 清除无效 cookie
     this.cookies = this.cookies.filter((item) => {
       return item.validate()
@@ -77,7 +77,7 @@ class CookieStore {
   /**
    * 从 Storage 读取 cookies
    */
-  readFromStorage() {
+  readFromStorage () {
     let cookies = wx.getStorageSync(this.storageKey) || []
     this.cookies = cookies.map((item) => new Cookie(item))
     return this.cookies
@@ -94,14 +94,14 @@ class CookieStore {
   /**
    * 解析 response set-cookie 字段
    */
-  parse(domain, setCookieStr = '') {
+  parse (domain, setCookieStr = '') {
     // 切分 cookies
-    let cookies = setCookieStr.split(',');
-    let fixCookies = [];
+    let cookies = setCookieStr.split(',')
+    let fixCookies = []
 
     // 修复被切分的 cookies
     cookies.forEach((item) => {
-      if (item.match(/^\S+\=/ig)) {
+      if (item.match(/^\S+\\=/ig)) {
         fixCookies.push(item)
       } else {
         let lastIndex = fixCookies.length - 1

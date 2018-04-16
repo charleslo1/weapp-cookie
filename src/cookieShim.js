@@ -15,7 +15,7 @@ const cookieStore = (function (wx, request) {
    */
   function requestProxy (options) {
     // 是否启用 cookie（默认 true）
-    options.cookie = options.cookie == undefined || !!options.cookie
+    options.cookie = options.cookie === undefined || !!options.cookie
     options.dataType = options.dataType || 'json'
     if (options.cookie) {
       // 域名
@@ -49,9 +49,9 @@ const cookieStore = (function (wx, request) {
 
   // 使用 requestProxy 覆盖微信原生 request
   Object.defineProperties(wx, {
-     request: {
-        value: requestProxy
-     }
+    request: {
+      value: requestProxy
+    }
   })
 
   // 返回 cookieStore

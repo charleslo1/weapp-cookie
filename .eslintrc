@@ -1,0 +1,31 @@
+{
+  "root": true,
+  "parserOptions": {
+    "ecmaVersion": 6,
+    "sourceType": "module"
+  },
+  "rules": {
+    "strict": 2,
+    "no-multi-spaces": "off",
+    "no-extra-boolean-cast": "off",
+    "handle-callback-err": "off",
+    "generator-star-spacing": 0,
+    "arrow-parens": 0,
+    "no-debugger": 2,
+    "no-undef": "off"
+  },
+  "plugins": [
+    "html",
+    "import",
+    "node",
+    "promise",
+    "standard"
+  ],
+  "env": {
+    "es6": true,
+    "browser": true,
+    "node": true,
+    "commonjs": true
+  },
+  "extends": "standard"
+}
