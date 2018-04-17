@@ -1,6 +1,6 @@
 {
   "name": "wxapp-cookie-shim",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "a priv check sdk",
   "main": "dist/wxapp-cookie-shim.js",
   "scripts": {
