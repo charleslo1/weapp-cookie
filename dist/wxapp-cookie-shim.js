@@ -260,10 +260,11 @@ var CookieStore = function () {
 
       // 修复被切分的 cookies
       cookies.forEach(function (item) {
-        if (item.match(/^\S+\\=/ig)) {
+        if (/^\S+\=/ig.test(item)) {
           fixCookies.push(item);
         } else {
           var lastIndex = fixCookies.length - 1;
+          if (lastIndex < 0) return;
           fixCookies[lastIndex] = [fixCookies[lastIndex], item].join(',');
         }
       });

@@ -12,7 +12,8 @@
     "generator-star-spacing": 0,
     "arrow-parens": 0,
     "no-debugger": 2,
-    "no-undef": "off"
+    "no-undef": 0,
+    "no-useless-escape": 0
   },
   "plugins": [
     "html",
