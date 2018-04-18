@@ -6,7 +6,7 @@
 ``` sh
 npm install wxapp-cookie-shim --save
 
-// 将 npm 包复制到 vendor 文件夹，避免小程序可能不能找到文件（tips：使用 wepy/mpvue 等框架无需此步）
+# 将 npm 包复制到 vendor 文件夹，避免小程序可能不能找到文件（tips：使用 wepy/mpvue 等框架无需此步）
 cp -rf ./node_modules/ ./vendor/
 ```
 
@@ -30,7 +30,7 @@ App({
 原来的 wx.request 调用方式保持不变，引入后 wxapp-cookie-shim 会在底层自动代理 wx.request 的接口访问，以支持 cookie 存储和发送
 
 ``` js
-// pages/index.js
+// pages/home/index.js
 
 Page({
     onLoad: function () {
