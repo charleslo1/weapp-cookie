@@ -6,7 +6,7 @@
 ``` sh
 npm install wxapp-cookie-shim --save
 
-// 需要复制到 vendor 文件夹，避免小程序可能不能找到文件
+// 将 npm 包复制到 vendor 文件夹，避免小程序可能不能找到文件（tips：使用 wepy/mpvue 等框架无需此步）
 cp -rf ./node_modules/ ./vendor/
 ```
 
@@ -17,6 +17,9 @@ cp -rf ./node_modules/ ./vendor/
 ``` js
 // app.js
 import './vendor/wxapp-cookie-shim/index'
+
+// tips: 使用 wepy/mpvue 可以直接在入口 js 引入 npm 模块
+// import 'wxapp-cookie-shim'
 
 App({
     onLaunch: function () { }
