@@ -18,7 +18,7 @@ cp -rf ./node_modules/ ./vendor/
 // app.js
 import './vendor/wxapp-cookie-shim/index'
 
-// tips: 使用 wepy/mpvue 可以直接在入口 js 引入 npm 模块
+// tips: 使用 wepy/mpvue 可以直接在入口 js 引入 wxapp-cookie-shim 模块
 // import 'wxapp-cookie-shim'
 
 App({
