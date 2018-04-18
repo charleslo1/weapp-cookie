@@ -61,14 +61,10 @@ class CookieStore {
    */
   saveToStorage () {
     // 清除无效 cookie
-    this.cookies = this.cookies.filter((item) => {
-      return item.validate()
-    })
+    this.cookies = this.cookies.filter((item) => item.validate())
 
     // 只存储可持久化 cookie
-    let saveCookies = this.cookies.filter((item) => {
-      return item.isPersistence()
-    })
+    let saveCookies = this.cookies.filter((item) => item.isPersistence())
 
     // 保存到本地存储
     wx.setStorageSync(this.storageKey, saveCookies)
