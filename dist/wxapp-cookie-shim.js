@@ -312,7 +312,7 @@ var cookieStore = function (wx, request) {
     options.dataType = options.dataType || 'json';
     if (options.cookie) {
       // 域名
-      var domain = new URL(options.url).host;
+      var domain = (options.url || '').split('/')[2];
 
       // 获取请求 cookies
       var requestCookies = cookieStore.getCookies(domain);
