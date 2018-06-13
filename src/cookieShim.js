@@ -19,7 +19,7 @@ const cookieStore = (function (wx, request) {
     options.dataType = options.dataType || 'json'
     if (options.cookie) {
       // 域名
-      let domain = new URL(options.url).host
+      let domain = (options.url || '').split('/')[2]
 
       // 获取请求 cookies
       let requestCookies = cookieStore.getCookies(domain)
