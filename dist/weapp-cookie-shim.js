@@ -1,7 +1,7 @@
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('babel-runtime/core-js/object/define-properties'), require('babel-runtime/helpers/classCallCheck'), require('babel-runtime/helpers/createClass')) :
 	typeof define === 'function' && define.amd ? define(['babel-runtime/core-js/object/define-properties', 'babel-runtime/helpers/classCallCheck', 'babel-runtime/helpers/createClass'], factory) :
-	(global.priv = factory(global._Object$defineProperties,global._classCallCheck,global._createClass));
+	(global.cookieShim = factory(global._Object$defineProperties,global._classCallCheck,global._createClass));
 }(this, (function (_Object$defineProperties,_classCallCheck,_createClass) { 'use strict';
 
 _Object$defineProperties = _Object$defineProperties && _Object$defineProperties.hasOwnProperty('default') ? _Object$defineProperties['default'] : _Object$defineProperties;
@@ -354,4 +354,4 @@ var cookieStore = function (wx, request) {
 return cookieStore;
 
 })));
-//# sourceMappingURL=wxapp-cookie-shim.js.map
+//# sourceMappingURL=weapp-cookie-shim.js.map
