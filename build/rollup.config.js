@@ -1,4 +1,4 @@
-// var resolve = require('rollup-plugin-node-resolve')
+var resolve = require('rollup-plugin-node-resolve')
 var commonjs = require('rollup-plugin-commonjs')
 var babel = require('rollup-plugin-babel')
 
@@ -11,11 +11,11 @@ var baseConfig = {
     sourcemap: true
   },
   plugins: [
-    // resolve({
-    //   jsnext: true,
-    //   main: true,
-    //   browser: true,
-    // }),
+    resolve({
+      jsnext: true,
+      main: true,
+      browser: true,
+    }),
     commonjs(),
     babel({
       exclude: 'node_modules/**',

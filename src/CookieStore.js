@@ -1,4 +1,5 @@
 import Cookie from './Cookie'
+import cookieParser from 'set-cookie-parser'
 
 /**
  * CookieStore 类
@@ -34,7 +35,7 @@ class CookieStore {
     let parsedCookies = this.parse(domain, cookieStr)
 
     // 删除旧的同名 cookie
-    let keys = parsedCookies.map((item) => item.key)
+    let keys = parsedCookies.map((item) => item.name)
     this.removeCookies(domain, keys)
 
     // 设置新 cookie
@@ -52,7 +53,7 @@ class CookieStore {
   removeCookies (domain, keys) {
     // 删除 cookies
     this.cookies = this.cookies.filter((item) => {
-      return !(item.domain === domain && keys.indexOf(item.key) >= 0)
+      return !(item.domain === domain && keys.indexOf(item.name) >= 0)
     })
   }
 
@@ -91,23 +92,14 @@ class CookieStore {
    * 解析 response set-cookie 字段
    */
   parse (domain, setCookieStr = '') {
-    // 切分 cookies
-    let cookies = setCookieStr.split(',')
-    let fixCookies = []
-
-    // 修复被切分的 cookies
-    cookies.forEach((item) => {
-      if ((/^\S+\=/ig).test(item)) {
-        fixCookies.push(item)
-      } else {
-        let lastIndex = fixCookies.length - 1
-        if (lastIndex < 0) return
-        fixCookies[lastIndex] = [fixCookies[lastIndex], item].join(',')
-      }
-    })
-
     // parse
-    return fixCookies.map((item) => new Cookie({ domain: domain }).set(item))
+    var cookies = cookieParser.parse(cookieParser.splitCookiesString(setCookieStr))
+
+    // 转换为 Cookie 对象
+    return cookies.map((item) => {
+      item.domain = domain
+      return new Cookie(item)
+    })
   }
 
   /**
