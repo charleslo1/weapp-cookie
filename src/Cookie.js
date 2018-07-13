@@ -1,3 +1,5 @@
+import cookieParser from 'set-cookie-parser'
+
 /**
  * Cookie 类
  */
@@ -5,54 +7,29 @@ class Cookie {
   /**
    * 构造函数
    */
-  constructor (obj) {
-    this.key = obj.key || ''
-    this.value = obj.value || ''
+  constructor (props) {
+    this.name = props.name || ''
+    this.value = props.value || ''
     // other
-    this.domain = obj.domain || ''
-    this.path = obj.path || ''
-    this.expires = obj.expires ? new Date(obj.expires) : null
-    this.maxAge = obj.maxAge ? parseInt(obj.maxAge) : null
-    this.httpOnly = !!obj.httpOnly
+    this.domain = props.domain || ''
+    this.path = props.path || ''
+    this.expires = props.expires ? new Date(props.expires) : null
+    this.maxAge = props.maxAge ? parseInt(props.maxAge) : null
+    this.httpOnly = !!props.httpOnly
     // 记录时间
-    this.dateTime = obj.dateTime ? new Date(obj.dateTime) : new Date()
+    this.dateTime = props.dateTime ? new Date(props.dateTime) : new Date()
   }
 
   /**
    * 设置 cookie, 将 set-cookie 字符串转换为 Cookie 对象
    */
   set (setCookieStr = '') {
-    // 解析并设置 cookie 属性值
-    let arr = setCookieStr.split(/\s*\\;\s*/g)
-    arr.forEach((item, i) => {
-      let temp = item.split('=')
-      if (i === 0) {
-        this.key = temp[0]
-        this.value = temp[1]
-      } else {
-        let prop = temp[0]
-        let value = temp[1]
-        prop = prop.replace(/-/g, '').replace(/^(\S)/g, (prop[0] || '').toLowerCase())
-
-        switch (prop) {
-          case 'maxAge':
-            this.maxAge = parseInt(value)
-            break
-          case 'expires':
-            this.expires = new Date(value)
-            break
-          case 'httpOnly':
-            this.httpOnly = true
-            break
-          default:
-            this[prop] = value
-            break
-        }
-      }
-    })
-
-    // 更新设置时间
-    this.dateTime = new Date()
+    var cookie = cookieParser.parse(setCookieStr)[0]
+    if (cookie) {
+      Object.assign(this, cookie)
+      // 更新设置时间
+      this.dateTime = new Date()
+    }
 
     return this
   }
@@ -90,7 +67,7 @@ class Cookie {
    * 重写对象的 toString 方法
    */
   toString () {
-    return [this.key, this.value].join('=')
+    return [this.name, this.value].join('=')
   }
 }
 
