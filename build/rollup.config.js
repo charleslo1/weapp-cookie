@@ -5,8 +5,8 @@ var babel = require('rollup-plugin-babel')
 var baseConfig = {
   input: 'index.js',
   output: {
-    file: 'dist/weapp-cookie-shim.js',
-    name: 'cookieShim',
+    file: 'dist/weapp-cookie.js',
+    name: 'weappCookie',
     format: 'umd',
     sourcemap: true
   },

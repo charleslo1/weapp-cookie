@@ -1,7 +1,7 @@
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
 	typeof define === 'function' && define.amd ? define(factory) :
-	(global.cookieShim = factory());
+	(global.weappCookie = factory());
 }(this, (function () { 'use strict';
 
 function unwrapExports (x) {
@@ -22,7 +22,7 @@ if (typeof __g == 'number') __g = global; // eslint-disable-line no-undef
 });
 
 var _core = createCommonjsModule(function (module) {
-var core = module.exports = { version: '2.5.5' };
+var core = module.exports = { version: '2.5.7' };
 if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
 });
 
@@ -266,11 +266,20 @@ var _arrayIncludes = function (IS_INCLUDES) {
   };
 };
 
+var _library = true;
+
+var _shared = createCommonjsModule(function (module) {
 var SHARED = '__core-js_shared__';
 var store = _global[SHARED] || (_global[SHARED] = {});
-var _shared = function (key) {
-  return store[key] || (store[key] = {});
-};
+
+(module.exports = function (key, value) {
+  return store[key] || (store[key] = value !== undefined ? value : {});
+})('versions', []).push({
+  version: _core.version,
+  mode: _library ? 'pure' : 'global',
+  copyright: '© 2018 Denis Pushkarev (zloirock.ru)'
+});
+});
 
 var id = 0;
 var px = Math.random();
@@ -938,4 +947,4 @@ var cookieStore = function (wx, request) {
 return cookieStore;
 
 })));
-//# sourceMappingURL=weapp-cookie-shim.js.map
+//# sourceMappingURL=weapp-cookie.js.map

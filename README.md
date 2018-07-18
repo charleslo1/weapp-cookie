@@ -1,10 +1,10 @@
-# weapp-cookie-shim
+# weapp-cookie
 > 一行代码让微信小程序支持 cookie，以保证基于 cookie 的服务器会话机制不会失效，与 web 端共用会话机制
 
 # Install
 
 ``` sh
-npm install weapp-cookie-shim --save
+npm install weapp-cookie --save
 
 # 将 npm 包复制到 vendor 文件夹，避免小程序可能不能找到文件（tips：使用 wepy/mpvue 等框架无需此步）
 cp -rf ./node_modules/ ./vendor/
@@ -16,10 +16,10 @@ cp -rf ./node_modules/ ./vendor/
 
 ``` js
 // app.js
-import './vendor/weapp-cookie-shim/index'
+import './vendor/weapp-cookie/index'
 
-// tips: 使用 wepy/mpvue 可以直接在入口 js 引入 weapp-cookie-shim 模块
-// import 'weapp-cookie-shim'
+// tips: 使用 wepy/mpvue 可以直接在入口 js 引入 weapp-cookie 模块
+// import 'weapp-cookie'
 
 App({
     onLaunch: function () { }
@@ -27,7 +27,7 @@ App({
 })
 ```
 
-原来的 wx.request 调用方式保持不变，引入后 weapp-cookie-shim 会在底层自动代理 wx.request 的接口访问，以支持 cookie 存储和发送
+原来的 wx.request 调用方式保持不变，引入后 weapp-cookie 会在底层自动代理 wx.request 的接口访问，以支持 cookie 存储和发送
 
 ``` js
 // pages/home/index.js
@@ -42,7 +42,7 @@ Page({
             },
             success: function (res) {
                 /*
-                 * 接口调用成功后 weapp-cookie-shim 会自动保存后端发送的所有Cookie（比如：SessionID）
+                 * 接口调用成功后 weapp-cookie 会自动保存后端发送的所有Cookie（比如：SessionID）
                  * 并在后续的所有请求中带上，以保证基于 cookie 的服务器会话机制不会失效，
                  * 实现与 web 端共用会话机制（无需再手动维护 3rd_session_key） 
                  */
