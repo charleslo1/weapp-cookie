@@ -1417,7 +1417,7 @@ function parse(input, options) {
     return [];
   }
   if (input.headers) {
-    input = input.headers["set-cookie"];
+    input = input.headers["Set-Cookie"] || input.headers["set-cookie"];
   }
   if (!Array.isArray(input)) {
     input = [input];
@@ -2225,7 +2225,7 @@ var cookieStore = function (wx, request) {
       var successCallback = options.success;
       options.success = function (response) {
         // 获取响应 cookies
-        var responseCookies = response.header['set-cookie'];
+        var responseCookies = response.header['Set-Cookie'] || response.header['set-cookie'] || '';
         // 设置 cookies，以便下次请求带上
         cookieStore.setResponseCookies(domain, responseCookies);
         successCallback && successCallback(response);

@@ -36,7 +36,7 @@ const cookieStore = (function (wx, request) {
       let successCallback = options.success
       options.success = function (response) {
         // 获取响应 cookies
-        let responseCookies = response.header['set-cookie']
+        let responseCookies = response.header['Set-Cookie'] || response.header['set-cookie'] || ''
         // 设置 cookies，以便下次请求带上
         cookieStore.setResponseCookies(domain, responseCookies)
         successCallback && successCallback(response)
