@@ -35,6 +35,15 @@ class Cookie {
   }
 
   /**
+   * 合并 cookie
+   * @param  {Cookie} cookie cookie 对象
+   * @return {Cookie}        this
+   */
+  merge (cookie) {
+    return Object(this, cookie)
+  }
+
+  /**
    * 验证 cookie 是否还有效
    * @return {Boolean} 是否有效
    */

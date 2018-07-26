@@ -22,7 +22,7 @@ const cookieStore = (function (wx, request) {
       let domain = (options.url || '').split('/')[2]
 
       // 获取请求 cookies
-      let requestCookies = cookieStore.getCookies(domain)
+      let requestCookies = cookieStore.getRequestCookies(domain)
 
       // 请求时带上设置的 cookies
       options.header = options.header || {}
@@ -38,7 +38,7 @@ const cookieStore = (function (wx, request) {
         // 获取响应 cookies
         let responseCookies = response.header['set-cookie']
         // 设置 cookies，以便下次请求带上
-        cookieStore.setCookies(domain, responseCookies)
+        cookieStore.setResponseCookies(domain, responseCookies)
         successCallback && successCallback(response)
       }
     }
