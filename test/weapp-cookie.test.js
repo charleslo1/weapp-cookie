@@ -6,7 +6,7 @@ global.wx = {
 const assert = require('assert')
 
 const cookie = require('../dist/weapp-cookie')
-const setCookieStr = 'EGG_SESSION=cQgFSy2NnOAAqWu7YUVVEoFWkf2YxXL1pi4GYPBl9ieUPI_YSy6LBvs7lsxB52cZ; domain=baidu.com; path=/; expires=Fri, 27 Jul 2018 04:02:51 GMT; httponly, dwf_sg_task_completion=False; expires=Sat, 25-Aug-2018 04:04:04 GMT; Max-Age=2592000; Path=/; secure;, PSINO=7; domain=.baidu.com; path=/,prod_crm_session=gBz4cg45F7A5TwRuSNgOw5xSRilpiec9Mht7bS9a; expires=Thu, 26-Jul-2018 06:14:05 GMT; Max-Age=7200; path=/; domain=.keketour.com; httponly'
+const setCookieStr = 'EGG_SESSION=cQgFSy2NnOAAqWu7YUVVEoFWkf2YxXL1pi4GYPBl9ieUPI_YSy6LBvs7lsxB52cZ; domain=baidu.com; path=/; expires=Fri, 27 Jul 2020 04:02:51 GMT; httponly, dwf_sg_task_completion=False; expires=Sat, 25-Aug-2020 04:04:04 GMT; Max-Age=2592000; Path=/; secure;, PSINO=7; domain=.baidu.com; path=/,prod_crm_session=gBz4cg45F7A5TwRuSNgOw5xSRilpiec9Mht7bS9a; expires=Thu, 26-Jul-2020 06:14:05 GMT; Max-Age=2592000; path=/; domain=.keketour.com; httponly'
 
 // 测试 weapp-cookie.js
 describe('weapp-cookie.js', () => {
@@ -36,6 +36,11 @@ describe('weapp-cookie.js', () => {
   it('cookie.get(name, domain)', () => {
     let result = cookie.get('session_id', 'baidu.com')
     assert.equal('session_id_value', result)
+  })
+
+  it('cookie.getCookie(name, domain)', () => {
+    let result = cookie.getCookie('session_id', 'baidu.com')
+    assert.equal('session_id', result.name)
   })
 
   it('cookie.getCookies(domain)', () => {
