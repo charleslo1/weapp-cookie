@@ -62,6 +62,27 @@ Page({
 })
 ```
 
+cookie 操作可通过 api 调用
+
+``` js
+import cookie from 'weapp-cookie'
+
+// 获取 cookie
+let token = cookie.get('csrf_token', 'example.com')
+
+// 设置 cookie
+let cookie = cookie.set('uid', 100, { domain: 'example.com' })
+
+// 删除 cookie
+let isRemoved = cookie.remove('uid', 'example.com')
+
+// 判断是否存在 cookie
+let hasToken = cookie.has('uid', 'example.com')
+
+// ... 详情请参考 Api
+
+```
+
 # Api
 ``` js
 import cookie from 'weapp-cookie'
