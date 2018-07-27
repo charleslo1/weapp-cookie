@@ -1417,7 +1417,7 @@ function parse(input, options) {
     return [];
   }
   if (input.headers) {
-    input = input.headers["Set-Cookie"] || input.headers["set-cookie"];
+    input = input.headers["set-cookie"];
   }
   if (!Array.isArray(input)) {
     input = [input];
