@@ -11,7 +11,6 @@
 * 可使用 api 获取、设置 cookie
 * 支持跨子域 cookie
 
-
 # Install
 
 ``` sh
@@ -62,6 +61,87 @@ Page({
     }
 })
 ```
+
+# Api
+``` js
+import cookie from 'weapp-cookie'
+
+
+/**
+* 获取 cookie
+* @param {String} name       cookie 名称
+* @param {String} [domain]   指定域名（可选）
+* 
+* @return {String}           cookie 值
+*/
+cookie.get(String name, String domain)
+
+/**
+* 设置 cookie
+* @param {String}  name              cookie 名称
+* @param {String}  value             cookie 值
+* @param {Object}  options           cookie 选项
+* @param {String}  options.domain    设置域名
+* @param {String}  [options.path]      
+* @param {Date}    [options.expires]
+* @param {Number}  [options.maxAge]
+* @param {Boolean} [options.httpOnly]
+* @return {Cookie}           cookie 对象
+*/
+cookie.set(String name, String value, Object options)
+
+/**
+* 是否存在某个 cookie
+* @param  {String}  name       cookie 名称
+* @param  {String}  [domain]   指定域名（可选，不指定则任意域名包含名称为 name 的 cokkie 即为存在）
+* @return {Boolean}            是否存在
+*/
+cookie.has(String name, String domain)
+
+/**
+* 删除 cookie
+* @param  {Array}  name      cookie 键
+* @param  {String} [domain]  指定域名（可选，不指定则删除所有域名中名称为 name 的 cookie）
+* @return {Boolean}          是否删除成功
+*/
+cookie.remove(String name, String domain)
+
+/**
+* 获取 cookies JSON 对象
+* @param  {String} [domain]  指定域名（可选，不指定则获取包含所有域名的 cookie 值对象）
+* @return {Object}           cookie JSON对象
+*/
+cookie.getCookies(String domain)
+
+/**
+* 获取 cookies Array 数组
+* @param  {String} [domain]  指定域名（可选，不指定则获取包含所有域名的 cookie 数组）
+* @return {Array}            Cookie 对象数组
+*/
+cookie.getCookiesArray(String domain)
+
+/**
+* 批量设置 cookie
+* @param  {Array} cookies  Cookie 对象数组
+* @return {Map}            cookies Map 对象
+*/
+cookie.setCookiesArray (Array cookies)
+
+/**
+* 清除 cookie
+* @param  {String} [domain]  指定域名（可选，不指定则清除所有域名 cookie）
+* @return {Boolean}          是否清除成功
+*/
+cookie.clearCookies (domain)
+
+/**
+* 获取所有存储的域名和 cookies 结构
+* @return {Object}   obj   结构JSON对象
+*/
+cookie.dir(domain)
+
+```
+
 
 ![star](https://user-gold-cdn.xitu.io/2018/7/24/164ca9c0e943dcd7?w=240&h=240&f=png&s=41877)
 

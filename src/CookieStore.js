@@ -53,9 +53,14 @@ class CookieStore {
 
   /**
    * 设置域名 cookie
-   * @param {String} name       cookie 名称
-   * @param {String} value      cookie 值
-   * @param {Object} [options]  cookie 选项
+   * @param {String}  name              cookie 名称
+   * @param {String}  value             cookie 值
+   * @param {Object}  options           cookie 选项
+   * @param {String}  options.domain
+   * @param {String}  [options.path]
+   * @param {Date}    [options.expires]
+   * @param {Number}  [options.maxAge]
+   * @param {Boolean} [options.httpOnly]
    * @return {Cookie}           cookie 对象
    */
   set (name, value, options) {
@@ -80,8 +85,8 @@ class CookieStore {
   }
 
   /**
-   * 打印所有 cookies 结构
-   * @return {Object}   dirObj
+   * 获取所有域名和 cookies 结构
+   * @return {Object}  obj  结构JSON对象
    */
   dir () {
     let dirObj = { }
@@ -97,7 +102,7 @@ class CookieStore {
    * 删除 cookie
    * @param  {Array}  name      cookie 键
    * @param  {String} [domain]  指定域名（可选）
-   * @return {Boolean}           删除成功
+   * @return {Boolean}          是否删除成功
    */
   remove (name, domain) {
     if (domain) {
@@ -120,7 +125,7 @@ class CookieStore {
   /**
    * 获取 cookies key/value 对象
    * @param  {String} [domain]  指定域名（可选）
-   * @return {Object}           cookies
+   * @return {Object}           cookie 值列表对象
    */
   getCookies (domain) {
     let cookieValues = { }
@@ -137,7 +142,7 @@ class CookieStore {
   /**
    * 获取 cookies 对象数组
    * @param  {String} [domain]  指定域名（可选）
-   * @return {Object}           cookies
+   * @return {Array}            Cookie 对象数组
    */
   getCookiesArray (domain) {
     let cookiesArr = []
@@ -172,7 +177,7 @@ class CookieStore {
    * @param  {Array} cookies  Cookie 对象数组
    * @return {Map}            cookies Map 对象
    */
-  setCookieArray (cookies = []) {
+  setCookiesArray (cookies = []) {
     this.__cookiesMap = this.__cookiesMap || new Map()
 
     // Cookie 数组转换 Map 对象
@@ -194,7 +199,7 @@ class CookieStore {
   /**
    * 清除 cookies
    * @param  {String} [domain]  指定域名（可选）
-   * @return {Boolean}          清除成功
+   * @return {Boolean}          是否清除成功
    */
   clearCookies (domain) {
     if (domain) {
@@ -233,7 +238,7 @@ class CookieStore {
     let parsedCookies = this.parse(setCookieStr, domain)
 
     // 设置 cookies
-    return this.setCookieArray(parsedCookies)
+    return this.setCookiesArray(parsedCookies)
   }
 
   /**
@@ -296,7 +301,7 @@ class CookieStore {
     cookies = cookies.map((item) => new Cookie(item))
 
     // 转化为 cookie map 对象
-    return this.setCookieArray(cookies)
+    return this.setCookiesArray(cookies)
   }
 
   /**

@@ -1719,9 +1719,14 @@ var CookieStore = function () {
 
     /**
      * 设置域名 cookie
-     * @param {String} name       cookie 名称
-     * @param {String} value      cookie 值
-     * @param {Object} [options]  cookie 选项
+     * @param {String}  name              cookie 名称
+     * @param {String}  value             cookie 值
+     * @param {Object}  options           cookie 选项
+     * @param {String}  options.domain
+     * @param {String}  [options.path]
+     * @param {Date}    [options.expires]
+     * @param {Number}  [options.maxAge]
+     * @param {Boolean} [options.httpOnly]
      * @return {Cookie}           cookie 对象
      */
 
@@ -1749,8 +1754,8 @@ var CookieStore = function () {
     }
 
     /**
-     * 打印所有 cookies 结构
-     * @return {Object}   dirObj
+     * 获取所有域名和 cookies 结构
+     * @return {Object}  obj  结构JSON对象
      */
 
   }, {
@@ -1790,7 +1795,7 @@ var CookieStore = function () {
      * 删除 cookie
      * @param  {Array}  name      cookie 键
      * @param  {String} [domain]  指定域名（可选）
-     * @return {Boolean}           删除成功
+     * @return {Boolean}          是否删除成功
      */
 
   }, {
@@ -1837,7 +1842,7 @@ var CookieStore = function () {
     /**
      * 获取 cookies key/value 对象
      * @param  {String} [domain]  指定域名（可选）
-     * @return {Object}           cookies
+     * @return {Object}           cookie 值列表对象
      */
 
   }, {
@@ -1857,7 +1862,7 @@ var CookieStore = function () {
     /**
      * 获取 cookies 对象数组
      * @param  {String} [domain]  指定域名（可选）
-     * @return {Object}           cookies
+     * @return {Array}            Cookie 对象数组
      */
 
   }, {
@@ -1961,8 +1966,8 @@ var CookieStore = function () {
      */
 
   }, {
-    key: 'setCookieArray',
-    value: function setCookieArray() {
+    key: 'setCookiesArray',
+    value: function setCookiesArray() {
       var _this2 = this;
 
       var cookies = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
@@ -1988,7 +1993,7 @@ var CookieStore = function () {
     /**
      * 清除 cookies
      * @param  {String} [domain]  指定域名（可选）
-     * @return {Boolean}          清除成功
+     * @return {Boolean}          是否清除成功
      */
 
   }, {
@@ -2036,7 +2041,7 @@ var CookieStore = function () {
       var parsedCookies = this.parse(setCookieStr, domain);
 
       // 设置 cookies
-      return this.setCookieArray(parsedCookies);
+      return this.setCookiesArray(parsedCookies);
     }
 
     /**
@@ -2160,7 +2165,7 @@ var CookieStore = function () {
       });
 
       // 转化为 cookie map 对象
-      return this.setCookieArray(cookies);
+      return this.setCookiesArray(cookies);
     }
 
     /**
