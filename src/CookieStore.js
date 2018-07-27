@@ -1,5 +1,6 @@
 import Cookie from './Cookie'
 import cookieParser from 'set-cookie-parser'
+import util from './util'
 
 /**
  * CookieStore 类
@@ -19,33 +20,24 @@ class CookieStore {
    * 是否存在某个 cookie
    * @param  {String}  name       cookie 名称
    * @param  {String}  [domain]   指定域名（可选）
+   * @param  {String}  [path]     指定path（可选）
    * @return {Boolean}            是否存在
    */
-  has (name, domain) {
+  has (name, domain, path) {
     // 返回是否存在 cookie 值
-    return this.get(name, domain) !== undefined
+    return this.getCookie(name, domain, path) !== undefined
   }
 
   /**
-   * 获取域名 cookie
+   * 获取 cookie 值
    * @param {String} name       cookie 名称
    * @param {String} [domain]   指定域名（可选）
+   * @param {String} [path]     指定path（可选）
    * @return {String}           cookie 值
    */
-  get (name = '', domain) {
-    let cookie = null
-
-    // 获取 cookie scope 域名数组
-    let scopeDomains = this.__getCookieScopeDomain(domain)
-
-    // 获取任意域名的 cookie
-    for (let [key, cookies] of this.__cookiesMap.entries()) {
-      // 如果有域名，则根据域名过滤
-      if (domain && scopeDomains.indexOf(key) < 0) continue
-      // 获取 cookie
-      cookie = cookies.get(name)
-      if (cookie) break
-    }
+  get (name = '', domain = '', path = '/') {
+    // 获取 cookie
+    let cookie = this.getCookie(name, domain, path)
 
     // 返回 cookie 值
     return cookie ? cookie.value : undefined
@@ -53,12 +45,17 @@ class CookieStore {
 
   /**
    * 设置域名 cookie
-   * @param {String} name       cookie 名称
-   * @param {String} value      cookie 值
-   * @param {Object} [options]  cookie 选项
+   * @param {String}  name              cookie 名称
+   * @param {String}  value             cookie 值
+   * @param {Object}  options           cookie 选项
+   * @param {String}  options.domain
+   * @param {String}  [options.path]
+   * @param {Date}    [options.expires]
+   * @param {Number}  [options.maxAge]
+   * @param {Boolean} [options.httpOnly]
    * @return {Cookie}           cookie 对象
    */
-  set (name, value, options) {
+  set (name = '', value = '', options = {}) {
     // 构建 Cookie 实例
     let domain = options.domain
     if (!domain || !name) throw new Error('name 和 options.domain 值不正确！')
@@ -80,8 +77,8 @@ class CookieStore {
   }
 
   /**
-   * 打印所有 cookies 结构
-   * @return {Object}   dirObj
+   * 获取所有域名和 cookies 结构
+   * @return {Object}  obj  结构JSON对象
    */
   dir () {
     let dirObj = { }
@@ -97,9 +94,9 @@ class CookieStore {
    * 删除 cookie
    * @param  {Array}  name      cookie 键
    * @param  {String} [domain]  指定域名（可选）
-   * @return {Boolean}           删除成功
+   * @return {Boolean}          是否删除成功
    */
-  remove (name, domain) {
+  remove (name = '', domain = '') {
     if (domain) {
       // 删除指定域名的 cookie
       let cookies = this.__cookiesMap.get(domain)
@@ -118,15 +115,42 @@ class CookieStore {
   }
 
   /**
+   * 获取 cookie 对象
+   * @param {String} name       cookie 名称
+   * @param {String} [domain]   指定域名（可选）
+   * @param {String} [path]     指定path（可选）
+   * @return {Cookie}           cookie 对象
+   */
+  getCookie (name = '', domain = '', path = '/') {
+    let cookie
+
+    // 获取 cookie scope 域名数组
+    let scopeDomains = util.getCookieScopeDomain(domain)
+
+    // 获取任意域名的 cookie
+    for (let [key, cookies] of this.__cookiesMap.entries()) {
+      // 如果有域名，则根据域名过滤
+      if (domain && scopeDomains.indexOf(key) < 0) continue
+      // 获取 cookie
+      cookie = cookies.get(name)
+      if (cookie && cookie.isInPath(path) && !cookie.isExpired()) break
+      cookie = undefined
+    }
+
+    // 返回 cookie 值
+    return cookie
+  }
+
+  /**
    * 获取 cookies key/value 对象
    * @param  {String} [domain]  指定域名（可选）
-   * @return {Object}           cookies
+   * @return {Object}           cookie 值列表对象
    */
-  getCookies (domain) {
+  getCookies (domain, path) {
     let cookieValues = { }
 
     // 将 cookie 值添加到对象
-    this.getCookiesArray(domain).forEach((cookie) => {
+    this.getCookiesArray(domain, path).forEach((cookie) => {
       cookieValues[cookie.name] = cookie.value
     })
 
@@ -137,28 +161,23 @@ class CookieStore {
   /**
    * 获取 cookies 对象数组
    * @param  {String} [domain]  指定域名（可选）
-   * @return {Object}           cookies
+   * @return {Array}            Cookie 对象数组
    */
-  getCookiesArray (domain) {
+  getCookiesArray (domain = '', path = '/') {
     let cookiesArr = []
 
-    if (domain) {
-      // 获取 cookie scope 域名数组
-      let scopeDomains = this.__getCookieScopeDomain(domain)
+    // 获取 cookie scope 域名数组
+    let scopeDomains = util.getCookieScopeDomain(domain)
 
-      // 获取指定域名范围的 cookies
-      scopeDomains.forEach((domain) => {
-        let cookies = this.__cookiesMap.get(domain)
-        if (!cookies) return
-        for (let cookie of cookies.values()) {
-          if (cookie.validate()) cookiesArr.push(cookie)
-        }
-      })
-    } else {
-      // 获取所有域名的 cookie 值
-      for (let cookies of this.__cookiesMap.values()) {
-        for (let cookie of cookies.values()) {
-          if (cookie.validate()) cookiesArr.push(cookie)
+    // 获取任意域名的 cookie
+    for (let [key, cookies] of this.__cookiesMap.entries()) {
+      // 如果有域名，则根据域名过滤
+      if (domain && scopeDomains.indexOf(key) < 0) continue
+      // 循环当前域名下所有 cookie
+      for (let cookie of cookies.values()) {
+        // 筛选符合 path 条件并且未过期的 cookie
+        if (cookie.isInPath(path) && !cookie.isExpired()) {
+          cookiesArr.push(cookie)
         }
       }
     }
@@ -172,7 +191,7 @@ class CookieStore {
    * @param  {Array} cookies  Cookie 对象数组
    * @return {Map}            cookies Map 对象
    */
-  setCookieArray (cookies = []) {
+  setCookiesArray (cookies = []) {
     this.__cookiesMap = this.__cookiesMap || new Map()
 
     // Cookie 数组转换 Map 对象
@@ -194,7 +213,7 @@ class CookieStore {
   /**
    * 清除 cookies
    * @param  {String} [domain]  指定域名（可选）
-   * @return {Boolean}          清除成功
+   * @return {Boolean}          是否清除成功
    */
   clearCookies (domain) {
     if (domain) {
@@ -215,9 +234,9 @@ class CookieStore {
    * @param  {String} domain 指定域名
    * @return {String}        request cookies 字符串
    */
-  getRequestCookies (domain) {
+  getRequestCookies (domain, path) {
     // cookies 数组
-    let cookiesArr = this.getCookiesArray(domain)
+    let cookiesArr = this.getCookiesArray(domain, path)
 
     // 转化为 request cookies 字符串
     return this.stringify(cookiesArr)
@@ -233,7 +252,7 @@ class CookieStore {
     let parsedCookies = this.parse(setCookieStr, domain)
 
     // 设置 cookies
-    return this.setCookieArray(parsedCookies)
+    return this.setCookiesArray(parsedCookies)
   }
 
   /**
@@ -271,12 +290,12 @@ class CookieStore {
     // 获取需要持久化的 cookie
     for (let cookies of this.__cookiesMap.values()) {
       for (let cookie of cookies.values()) {
-        if (cookie.validate()) {
-          // 只存储可持久化 cookie
-          if (cookie.isPersistence()) saveCookies.push(cookie)
-        } else {
+        if (cookie.isExpired()) {
           // 清除无效 cookie
-          cookies.delete(key)
+          cookies.delete(cookie.name)
+        } else if (cookie.isPersistence()) {
+          // 只存储可持久化 cookie
+          saveCookies.push(cookie)
         }
       }
     }
@@ -296,22 +315,7 @@ class CookieStore {
     cookies = cookies.map((item) => new Cookie(item))
 
     // 转化为 cookie map 对象
-    return this.setCookieArray(cookies)
-  }
-
-  /**
-   * 根据域名获取该域名的 cookie 作用域范围列表
-   * @param  {String} domain 指定域名
-   * @return {String}        cookie 作用域范围列表
-   */
-  __getCookieScopeDomain (domain = '') {
-    if (!domain) return []
-
-    // 获取 cookie 作用域范围列表
-    domain = domain.replace(/^\.+/ig, '')
-    let scopes = domain.split('.').map(k => ['.', domain.slice(domain.indexOf(k))].join(''))
-
-    return [domain].concat(scopes)
+    return this.setCookiesArray(cookies)
   }
 }
 

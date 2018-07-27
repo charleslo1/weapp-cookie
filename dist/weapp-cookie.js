@@ -346,25 +346,15 @@ module.exports = { "default": defineProperties$1, __esModule: true };
 
 var _Object$defineProperties = unwrapExports(defineProperties);
 
-// true  -> String#at
-// false -> String#codePointAt
-var _stringAt = function (TO_STRING) {
-  return function (that, pos) {
-    var s = String(_defined(that));
-    var i = _toInteger(pos);
-    var l = s.length;
-    var a, b;
-    if (i < 0 || i >= l) return TO_STRING ? '' : undefined;
-    a = s.charCodeAt(i);
-    return a < 0xd800 || a > 0xdbff || i + 1 === l || (b = s.charCodeAt(i + 1)) < 0xdc00 || b > 0xdfff
-      ? TO_STRING ? s.charAt(i) : a
-      : TO_STRING ? s.slice(i, i + 2) : (a - 0xd800 << 10) + (b - 0xdc00) + 0x10000;
-  };
+var _addToUnscopables = function () { /* empty */ };
+
+var _iterStep = function (done, value) {
+  return { value: value, done: !!done };
 };
 
-var _redefine = _hide;
-
 var _iterators = {};
+
+var _redefine = _hide;
 
 var document$1 = _global.document;
 var _html = document$1 && document$1.documentElement;
@@ -538,30 +528,6 @@ var _iterDefine = function (Base, NAME, Constructor, next, DEFAULT, IS_SET, FORC
 };
 
 'use strict';
-var $at = _stringAt(true);
-
-// 21.1.3.27 String.prototype[@@iterator]()
-_iterDefine(String, 'String', function (iterated) {
-  this._t = String(iterated); // target
-  this._i = 0;                // next index
-// 21.1.5.2.1 %StringIteratorPrototype%.next()
-}, function () {
-  var O = this._t;
-  var index = this._i;
-  var point;
-  if (index >= O.length) return { value: undefined, done: true };
-  point = $at(O, index);
-  this._i += point.length;
-  return { value: point, done: false };
-});
-
-var _addToUnscopables = function () { /* empty */ };
-
-var _iterStep = function (done, value) {
-  return { value: value, done: !!done };
-};
-
-'use strict';
 
 
 
@@ -612,6 +578,160 @@ for (var i = 0; i < DOMIterables.length; i++) {
   _iterators[NAME] = _iterators.Array;
 }
 
+// true  -> String#at
+// false -> String#codePointAt
+var _stringAt = function (TO_STRING) {
+  return function (that, pos) {
+    var s = String(_defined(that));
+    var i = _toInteger(pos);
+    var l = s.length;
+    var a, b;
+    if (i < 0 || i >= l) return TO_STRING ? '' : undefined;
+    a = s.charCodeAt(i);
+    return a < 0xd800 || a > 0xdbff || i + 1 === l || (b = s.charCodeAt(i + 1)) < 0xdc00 || b > 0xdfff
+      ? TO_STRING ? s.charAt(i) : a
+      : TO_STRING ? s.slice(i, i + 2) : (a - 0xd800 << 10) + (b - 0xdc00) + 0x10000;
+  };
+};
+
+'use strict';
+var $at = _stringAt(true);
+
+// 21.1.3.27 String.prototype[@@iterator]()
+_iterDefine(String, 'String', function (iterated) {
+  this._t = String(iterated); // target
+  this._i = 0;                // next index
+// 21.1.5.2.1 %StringIteratorPrototype%.next()
+}, function () {
+  var O = this._t;
+  var index = this._i;
+  var point;
+  if (index >= O.length) return { value: undefined, done: true };
+  point = $at(O, index);
+  this._i += point.length;
+  return { value: point, done: false };
+});
+
+// getting tag from 19.1.3.6 Object.prototype.toString()
+
+var TAG$1 = _wks('toStringTag');
+// ES3 wrong here
+var ARG = _cof(function () { return arguments; }()) == 'Arguments';
+
+// fallback for IE11 Script Access Denied error
+var tryGet = function (it, key) {
+  try {
+    return it[key];
+  } catch (e) { /* empty */ }
+};
+
+var _classof = function (it) {
+  var O, T, B;
+  return it === undefined ? 'Undefined' : it === null ? 'Null'
+    // @@toStringTag case
+    : typeof (T = tryGet(O = Object(it), TAG$1)) == 'string' ? T
+    // builtinTag case
+    : ARG ? _cof(O)
+    // ES3 arguments fallback
+    : (B = _cof(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : B;
+};
+
+var ITERATOR$1 = _wks('iterator');
+
+var core_isIterable = _core.isIterable = function (it) {
+  var O = Object(it);
+  return O[ITERATOR$1] !== undefined
+    || '@@iterator' in O
+    // eslint-disable-next-line no-prototype-builtins
+    || _iterators.hasOwnProperty(_classof(O));
+};
+
+var isIterable$2 = core_isIterable;
+
+var isIterable = createCommonjsModule(function (module) {
+module.exports = { "default": isIterable$2, __esModule: true };
+});
+
+unwrapExports(isIterable);
+
+var ITERATOR$2 = _wks('iterator');
+
+var core_getIteratorMethod = _core.getIteratorMethod = function (it) {
+  if (it != undefined) return it[ITERATOR$2]
+    || it['@@iterator']
+    || _iterators[_classof(it)];
+};
+
+var core_getIterator = _core.getIterator = function (it) {
+  var iterFn = core_getIteratorMethod(it);
+  if (typeof iterFn != 'function') throw TypeError(it + ' is not iterable!');
+  return _anObject(iterFn.call(it));
+};
+
+var getIterator$1 = core_getIterator;
+
+var getIterator = createCommonjsModule(function (module) {
+module.exports = { "default": getIterator$1, __esModule: true };
+});
+
+var _getIterator = unwrapExports(getIterator);
+
+var slicedToArray = createCommonjsModule(function (module, exports) {
+"use strict";
+
+exports.__esModule = true;
+
+
+
+var _isIterable3 = _interopRequireDefault(isIterable);
+
+
+
+var _getIterator3 = _interopRequireDefault(getIterator);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = function () {
+  function sliceIterator(arr, i) {
+    var _arr = [];
+    var _n = true;
+    var _d = false;
+    var _e = undefined;
+
+    try {
+      for (var _i = (0, _getIterator3.default)(arr), _s; !(_n = (_s = _i.next()).done); _n = true) {
+        _arr.push(_s.value);
+
+        if (i && _arr.length === i) break;
+      }
+    } catch (err) {
+      _d = true;
+      _e = err;
+    } finally {
+      try {
+        if (!_n && _i["return"]) _i["return"]();
+      } finally {
+        if (_d) throw _e;
+      }
+    }
+
+    return _arr;
+  }
+
+  return function (arr, i) {
+    if (Array.isArray(arr)) {
+      return arr;
+    } else if ((0, _isIterable3.default)(Object(arr))) {
+      return sliceIterator(arr, i);
+    } else {
+      throw new TypeError("Invalid attempt to destructure non-iterable instance");
+    }
+  };
+}();
+});
+
+var _slicedToArray = unwrapExports(slicedToArray);
+
 var _redefineAll = function (target, src, safe) {
   for (var key in src) {
     if (safe && target[key]) target[key] = src[key];
@@ -640,43 +760,11 @@ var _iterCall = function (iterator, fn, value, entries) {
 
 // check on default Array iterator
 
-var ITERATOR$1 = _wks('iterator');
+var ITERATOR$3 = _wks('iterator');
 var ArrayProto = Array.prototype;
 
 var _isArrayIter = function (it) {
-  return it !== undefined && (_iterators.Array === it || ArrayProto[ITERATOR$1] === it);
-};
-
-// getting tag from 19.1.3.6 Object.prototype.toString()
-
-var TAG$1 = _wks('toStringTag');
-// ES3 wrong here
-var ARG = _cof(function () { return arguments; }()) == 'Arguments';
-
-// fallback for IE11 Script Access Denied error
-var tryGet = function (it, key) {
-  try {
-    return it[key];
-  } catch (e) { /* empty */ }
-};
-
-var _classof = function (it) {
-  var O, T, B;
-  return it === undefined ? 'Undefined' : it === null ? 'Null'
-    // @@toStringTag case
-    : typeof (T = tryGet(O = Object(it), TAG$1)) == 'string' ? T
-    // builtinTag case
-    : ARG ? _cof(O)
-    // ES3 arguments fallback
-    : (B = _cof(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : B;
-};
-
-var ITERATOR$2 = _wks('iterator');
-
-var core_getIteratorMethod = _core.getIteratorMethod = function (it) {
-  if (it != undefined) return it[ITERATOR$2]
-    || it['@@iterator']
-    || _iterators[_classof(it)];
+  return it !== undefined && (_iterators.Array === it || ArrayProto[ITERATOR$3] === it);
 };
 
 var _forOf = createCommonjsModule(function (module) {
@@ -1212,94 +1300,6 @@ module.exports = { "default": assign$1, __esModule: true };
 
 var _Object$assign = unwrapExports(assign);
 
-var ITERATOR$3 = _wks('iterator');
-
-var core_isIterable = _core.isIterable = function (it) {
-  var O = Object(it);
-  return O[ITERATOR$3] !== undefined
-    || '@@iterator' in O
-    // eslint-disable-next-line no-prototype-builtins
-    || _iterators.hasOwnProperty(_classof(O));
-};
-
-var isIterable$2 = core_isIterable;
-
-var isIterable = createCommonjsModule(function (module) {
-module.exports = { "default": isIterable$2, __esModule: true };
-});
-
-unwrapExports(isIterable);
-
-var core_getIterator = _core.getIterator = function (it) {
-  var iterFn = core_getIteratorMethod(it);
-  if (typeof iterFn != 'function') throw TypeError(it + ' is not iterable!');
-  return _anObject(iterFn.call(it));
-};
-
-var getIterator$1 = core_getIterator;
-
-var getIterator = createCommonjsModule(function (module) {
-module.exports = { "default": getIterator$1, __esModule: true };
-});
-
-var _getIterator = unwrapExports(getIterator);
-
-var slicedToArray = createCommonjsModule(function (module, exports) {
-"use strict";
-
-exports.__esModule = true;
-
-
-
-var _isIterable3 = _interopRequireDefault(isIterable);
-
-
-
-var _getIterator3 = _interopRequireDefault(getIterator);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = function () {
-  function sliceIterator(arr, i) {
-    var _arr = [];
-    var _n = true;
-    var _d = false;
-    var _e = undefined;
-
-    try {
-      for (var _i = (0, _getIterator3.default)(arr), _s; !(_n = (_s = _i.next()).done); _n = true) {
-        _arr.push(_s.value);
-
-        if (i && _arr.length === i) break;
-      }
-    } catch (err) {
-      _d = true;
-      _e = err;
-    } finally {
-      try {
-        if (!_n && _i["return"]) _i["return"]();
-      } finally {
-        if (_d) throw _e;
-      }
-    }
-
-    return _arr;
-  }
-
-  return function (arr, i) {
-    if (Array.isArray(arr)) {
-      return arr;
-    } else if ((0, _isIterable3.default)(Object(arr))) {
-      return sliceIterator(arr, i);
-    } else {
-      throw new TypeError("Invalid attempt to destructure non-iterable instance");
-    }
-  };
-}();
-});
-
-var _slicedToArray = unwrapExports(slicedToArray);
-
 var classCallCheck = createCommonjsModule(function (module, exports) {
 "use strict";
 
@@ -1527,6 +1527,42 @@ setCookie.parse = parse_1;
 setCookie.splitCookiesString = splitCookiesString_1;
 
 /**
+ * Util 类
+ */
+var Util = function () {
+  function Util() {
+    _classCallCheck(this, Util);
+  }
+
+  _createClass(Util, [{
+    key: 'getCookieScopeDomain',
+
+    /**
+     * 根据域名获取该域名的 cookie 作用域范围列表
+     * @param  {String} domain 指定域名
+     * @return {String}        cookie 作用域范围列表
+     */
+    value: function getCookieScopeDomain() {
+      var domain = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+
+      if (!domain) return [];
+
+      // 获取 cookie 作用域范围列表
+      domain = domain.replace(/^\.+/ig, '');
+      var scopes = domain.split('.').map(function (k) {
+        return ['.', domain.slice(domain.indexOf(k))].join('');
+      });
+
+      return [domain].concat(scopes);
+    }
+  }]);
+
+  return Util;
+}();
+
+var util = new Util();
+
+/**
  * Cookie 类
  */
 
@@ -1541,7 +1577,7 @@ var Cookie = function () {
     this.value = props.value || '';
     // other
     this.domain = props.domain || '';
-    this.path = props.path || '';
+    this.path = props.path || '/';
     this.expires = props.expires ? new Date(props.expires) : null;
     this.maxAge = props.maxAge ? parseInt(props.maxAge) : null;
     this.httpOnly = !!props.httpOnly;
@@ -1587,22 +1623,22 @@ var Cookie = function () {
      */
 
   }, {
-    key: 'validate',
-    value: function validate() {
+    key: 'isExpired',
+    value: function isExpired() {
       // maxAge 为 0，无效
       if (this.maxAge === 0) {
-        return false;
+        return true;
       }
       // 存活秒数超出 maxAge，无效
       if (this.maxAge > 0) {
         var seconds = (Date.now() - this.dateTime.getTime()) / 1000;
-        return seconds < this.maxAge;
+        return seconds > this.maxAge;
       }
       // expires 小于当前时间，无效
       if (this.expires && this.expires < new Date()) {
-        return false;
+        return true;
       }
-      return true;
+      return false;
     }
 
     /**
@@ -1614,6 +1650,31 @@ var Cookie = function () {
     key: 'isPersistence',
     value: function isPersistence() {
       return this.maxAge ? this.maxAge > 0 : true;
+    }
+
+    /**
+     * 验证 cookie 是否在指定的 domain 范围内
+     * @param  {String}  domain    域名
+     * @return {Boolean}           是否在指定的 domain 范围内
+     */
+
+  }, {
+    key: 'isInDomain',
+    value: function isInDomain(domain) {
+      var scopeDomains = util.getCookieScopeDomain(domain);
+      return scopeDomains.indexOf(this.domain) >= 0;
+    }
+
+    /**
+     * 验证 cookie 是否在指定的 path 范围内
+     * @param  {String}  path    url路径
+     * @return {Boolean}         是否在指定的 path 范围内
+     */
+
+  }, {
+    key: 'isInPath',
+    value: function isInPath(path) {
+      return path.indexOf(this.path) === 0 || this.path.replace(/\/$/, '') === path;
     }
 
     /**
@@ -1651,21 +1712,23 @@ var CookieStore = function () {
    * 是否存在某个 cookie
    * @param  {String}  name       cookie 名称
    * @param  {String}  [domain]   指定域名（可选）
+   * @param  {String}  [path]     指定path（可选）
    * @return {Boolean}            是否存在
    */
 
 
   _createClass(CookieStore, [{
     key: 'has',
-    value: function has(name, domain) {
+    value: function has(name, domain, path) {
       // 返回是否存在 cookie 值
-      return this.get(name, domain) !== undefined;
+      return this.getCookie(name, domain, path) !== undefined;
     }
 
     /**
-     * 获取域名 cookie
+     * 获取 cookie 值
      * @param {String} name       cookie 名称
      * @param {String} [domain]   指定域名（可选）
+     * @param {String} [path]     指定path（可选）
      * @return {String}           cookie 值
      */
 
@@ -1673,61 +1736,36 @@ var CookieStore = function () {
     key: 'get',
     value: function get() {
       var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-      var domain = arguments[1];
+      var domain = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      var path = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '/';
 
-      var cookie = null;
+      // 获取 cookie
+      var cookie = this.getCookie(name, domain, path);
 
-      // 获取 cookie scope 域名数组
-      var scopeDomains = this.__getCookieScopeDomain(domain);
-
-      // 获取任意域名的 cookie
-      var _iteratorNormalCompletion = true;
-      var _didIteratorError = false;
-      var _iteratorError = undefined;
-
-      try {
-        for (var _iterator = _getIterator(this.__cookiesMap.entries()), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-          var _step$value = _slicedToArray(_step.value, 2),
-              _key = _step$value[0],
-              cookies = _step$value[1];
-
-          // 如果有域名，则根据域名过滤
-          if (domain && scopeDomains.indexOf(_key) < 0) continue;
-          // 获取 cookie
-          cookie = cookies.get(name);
-          if (cookie) break;
-        }
-
-        // 返回 cookie 值
-      } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion && _iterator.return) {
-            _iterator.return();
-          }
-        } finally {
-          if (_didIteratorError) {
-            throw _iteratorError;
-          }
-        }
-      }
-
+      // 返回 cookie 值
       return cookie ? cookie.value : undefined;
     }
 
     /**
      * 设置域名 cookie
-     * @param {String} name       cookie 名称
-     * @param {String} value      cookie 值
-     * @param {Object} [options]  cookie 选项
+     * @param {String}  name              cookie 名称
+     * @param {String}  value             cookie 值
+     * @param {Object}  options           cookie 选项
+     * @param {String}  options.domain
+     * @param {String}  [options.path]
+     * @param {Date}    [options.expires]
+     * @param {Number}  [options.maxAge]
+     * @param {Boolean} [options.httpOnly]
      * @return {Cookie}           cookie 对象
      */
 
   }, {
     key: 'set',
-    value: function set(name, value, options) {
+    value: function set() {
+      var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+      var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
       // 构建 Cookie 实例
       var domain = options.domain;
       if (!domain || !name) throw new Error('name 和 options.domain 值不正确！');
@@ -1749,8 +1787,8 @@ var CookieStore = function () {
     }
 
     /**
-     * 打印所有 cookies 结构
-     * @return {Object}   dirObj
+     * 获取所有域名和 cookies 结构
+     * @return {Object}  obj  结构JSON对象
      */
 
   }, {
@@ -1758,27 +1796,27 @@ var CookieStore = function () {
     value: function dir() {
       var dirObj = {};
 
-      var _iteratorNormalCompletion2 = true;
-      var _didIteratorError2 = false;
-      var _iteratorError2 = undefined;
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
 
       try {
-        for (var _iterator2 = _getIterator(this.__cookiesMap.keys()), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-          var domain = _step2.value;
+        for (var _iterator = _getIterator(this.__cookiesMap.keys()), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var domain = _step.value;
 
           dirObj[domain] = this.getCookies(domain);
         }
       } catch (err) {
-        _didIteratorError2 = true;
-        _iteratorError2 = err;
+        _didIteratorError = true;
+        _iteratorError = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion2 && _iterator2.return) {
-            _iterator2.return();
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
           }
         } finally {
-          if (_didIteratorError2) {
-            throw _iteratorError2;
+          if (_didIteratorError) {
+            throw _iteratorError;
           }
         }
       }
@@ -1790,39 +1828,42 @@ var CookieStore = function () {
      * 删除 cookie
      * @param  {Array}  name      cookie 键
      * @param  {String} [domain]  指定域名（可选）
-     * @return {Boolean}           删除成功
+     * @return {Boolean}          是否删除成功
      */
 
   }, {
     key: 'remove',
-    value: function remove(name, domain) {
+    value: function remove() {
+      var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+      var domain = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+
       if (domain) {
         // 删除指定域名的 cookie
         var cookies = this.__cookiesMap.get(domain);
         cookies && cookies.delete(name);
       } else {
         // 删除所有域名的 cookie
-        var _iteratorNormalCompletion3 = true;
-        var _didIteratorError3 = false;
-        var _iteratorError3 = undefined;
+        var _iteratorNormalCompletion2 = true;
+        var _didIteratorError2 = false;
+        var _iteratorError2 = undefined;
 
         try {
-          for (var _iterator3 = _getIterator(this.__cookiesMap.values()), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-            var _cookies = _step3.value;
+          for (var _iterator2 = _getIterator(this.__cookiesMap.values()), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+            var _cookies = _step2.value;
 
             _cookies.delete(name);
           }
         } catch (err) {
-          _didIteratorError3 = true;
-          _iteratorError3 = err;
+          _didIteratorError2 = true;
+          _iteratorError2 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion3 && _iterator3.return) {
-              _iterator3.return();
+            if (!_iteratorNormalCompletion2 && _iterator2.return) {
+              _iterator2.return();
             }
           } finally {
-            if (_didIteratorError3) {
-              throw _iteratorError3;
+            if (_didIteratorError2) {
+              throw _iteratorError2;
             }
           }
         }
@@ -1835,18 +1876,76 @@ var CookieStore = function () {
     }
 
     /**
+     * 获取 cookie 对象
+     * @param {String} name       cookie 名称
+     * @param {String} [domain]   指定域名（可选）
+     * @param {String} [path]     指定path（可选）
+     * @return {Cookie}           cookie 对象
+     */
+
+  }, {
+    key: 'getCookie',
+    value: function getCookie() {
+      var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+      var domain = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      var path = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '/';
+
+      var cookie = void 0;
+
+      // 获取 cookie scope 域名数组
+      var scopeDomains = util.getCookieScopeDomain(domain);
+
+      // 获取任意域名的 cookie
+      var _iteratorNormalCompletion3 = true;
+      var _didIteratorError3 = false;
+      var _iteratorError3 = undefined;
+
+      try {
+        for (var _iterator3 = _getIterator(this.__cookiesMap.entries()), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          var _step3$value = _slicedToArray(_step3.value, 2),
+              key = _step3$value[0],
+              cookies = _step3$value[1];
+
+          // 如果有域名，则根据域名过滤
+          if (domain && scopeDomains.indexOf(key) < 0) continue;
+          // 获取 cookie
+          cookie = cookies.get(name);
+          if (cookie && cookie.isInPath(path) && !cookie.isExpired()) break;
+          cookie = undefined;
+        }
+
+        // 返回 cookie 值
+      } catch (err) {
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion3 && _iterator3.return) {
+            _iterator3.return();
+          }
+        } finally {
+          if (_didIteratorError3) {
+            throw _iteratorError3;
+          }
+        }
+      }
+
+      return cookie;
+    }
+
+    /**
      * 获取 cookies key/value 对象
      * @param  {String} [domain]  指定域名（可选）
-     * @return {Object}           cookies
+     * @return {Object}           cookie 值列表对象
      */
 
   }, {
     key: 'getCookies',
-    value: function getCookies(domain) {
+    value: function getCookies(domain, path) {
       var cookieValues = {};
 
       // 将 cookie 值添加到对象
-      this.getCookiesArray(domain).forEach(function (cookie) {
+      this.getCookiesArray(domain, path).forEach(function (cookie) {
         cookieValues[cookie.name] = cookie.value;
       });
 
@@ -1857,100 +1956,79 @@ var CookieStore = function () {
     /**
      * 获取 cookies 对象数组
      * @param  {String} [domain]  指定域名（可选）
-     * @return {Object}           cookies
+     * @return {Array}            Cookie 对象数组
      */
 
   }, {
     key: 'getCookiesArray',
-    value: function getCookiesArray(domain) {
-      var _this = this;
+    value: function getCookiesArray() {
+      var domain = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+      var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '/';
 
       var cookiesArr = [];
 
-      if (domain) {
-        // 获取 cookie scope 域名数组
-        var scopeDomains = this.__getCookieScopeDomain(domain);
+      // 获取 cookie scope 域名数组
+      var scopeDomains = util.getCookieScopeDomain(domain);
 
-        // 获取指定域名范围的 cookies
-        scopeDomains.forEach(function (domain) {
-          var cookies = _this.__cookiesMap.get(domain);
-          if (!cookies) return;
-          var _iteratorNormalCompletion4 = true;
-          var _didIteratorError4 = false;
-          var _iteratorError4 = undefined;
+      // 获取任意域名的 cookie
+      var _iteratorNormalCompletion4 = true;
+      var _didIteratorError4 = false;
+      var _iteratorError4 = undefined;
+
+      try {
+        for (var _iterator4 = _getIterator(this.__cookiesMap.entries()), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+          var _step4$value = _slicedToArray(_step4.value, 2),
+              key = _step4$value[0],
+              cookies = _step4$value[1];
+
+          // 如果有域名，则根据域名过滤
+          if (domain && scopeDomains.indexOf(key) < 0) continue;
+          // 循环当前域名下所有 cookie
+          var _iteratorNormalCompletion5 = true;
+          var _didIteratorError5 = false;
+          var _iteratorError5 = undefined;
 
           try {
-            for (var _iterator4 = _getIterator(cookies.values()), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-              var cookie = _step4.value;
+            for (var _iterator5 = _getIterator(cookies.values()), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+              var cookie = _step5.value;
 
-              if (cookie.validate()) cookiesArr.push(cookie);
+              // 筛选符合 path 条件并且未过期的 cookie
+              if (cookie.isInPath(path) && !cookie.isExpired()) {
+                cookiesArr.push(cookie);
+              }
             }
           } catch (err) {
-            _didIteratorError4 = true;
-            _iteratorError4 = err;
+            _didIteratorError5 = true;
+            _iteratorError5 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                _iterator4.return();
+              if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                _iterator5.return();
               }
             } finally {
-              if (_didIteratorError4) {
-                throw _iteratorError4;
+              if (_didIteratorError5) {
+                throw _iteratorError5;
               }
             }
           }
-        });
-      } else {
-        // 获取所有域名的 cookie 值
-        var _iteratorNormalCompletion5 = true;
-        var _didIteratorError5 = false;
-        var _iteratorError5 = undefined;
+        }
 
+        // 返回获取的 cookie 值对象
+      } catch (err) {
+        _didIteratorError4 = true;
+        _iteratorError4 = err;
+      } finally {
         try {
-          for (var _iterator5 = _getIterator(this.__cookiesMap.values()), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-            var cookies = _step5.value;
-            var _iteratorNormalCompletion6 = true;
-            var _didIteratorError6 = false;
-            var _iteratorError6 = undefined;
-
-            try {
-              for (var _iterator6 = _getIterator(cookies.values()), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                var cookie = _step6.value;
-
-                if (cookie.validate()) cookiesArr.push(cookie);
-              }
-            } catch (err) {
-              _didIteratorError6 = true;
-              _iteratorError6 = err;
-            } finally {
-              try {
-                if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                  _iterator6.return();
-                }
-              } finally {
-                if (_didIteratorError6) {
-                  throw _iteratorError6;
-                }
-              }
-            }
+          if (!_iteratorNormalCompletion4 && _iterator4.return) {
+            _iterator4.return();
           }
-        } catch (err) {
-          _didIteratorError5 = true;
-          _iteratorError5 = err;
         } finally {
-          try {
-            if (!_iteratorNormalCompletion5 && _iterator5.return) {
-              _iterator5.return();
-            }
-          } finally {
-            if (_didIteratorError5) {
-              throw _iteratorError5;
-            }
+          if (_didIteratorError4) {
+            throw _iteratorError4;
           }
         }
       }
 
-      // 返回获取的 cookie 值对象
       return cookiesArr;
     }
 
@@ -1961,9 +2039,9 @@ var CookieStore = function () {
      */
 
   }, {
-    key: 'setCookieArray',
-    value: function setCookieArray() {
-      var _this2 = this;
+    key: 'setCookiesArray',
+    value: function setCookiesArray() {
+      var _this = this;
 
       var cookies = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
 
@@ -1971,10 +2049,10 @@ var CookieStore = function () {
 
       // Cookie 数组转换 Map 对象
       cookies.forEach(function (cookie) {
-        var cookieMap = _this2.__cookiesMap.get(cookie.domain);
+        var cookieMap = _this.__cookiesMap.get(cookie.domain);
         if (!cookieMap) {
           cookieMap = new _Map();
-          _this2.__cookiesMap.set(cookie.domain, cookieMap);
+          _this.__cookiesMap.set(cookie.domain, cookieMap);
         }
         cookieMap.set(cookie.name, cookie);
       });
@@ -1988,7 +2066,7 @@ var CookieStore = function () {
     /**
      * 清除 cookies
      * @param  {String} [domain]  指定域名（可选）
-     * @return {Boolean}          清除成功
+     * @return {Boolean}          是否清除成功
      */
 
   }, {
@@ -2015,9 +2093,9 @@ var CookieStore = function () {
 
   }, {
     key: 'getRequestCookies',
-    value: function getRequestCookies(domain) {
+    value: function getRequestCookies(domain, path) {
       // cookies 数组
-      var cookiesArr = this.getCookiesArray(domain);
+      var cookiesArr = this.getCookiesArray(domain, path);
 
       // 转化为 request cookies 字符串
       return this.stringify(cookiesArr);
@@ -2036,7 +2114,7 @@ var CookieStore = function () {
       var parsedCookies = this.parse(setCookieStr, domain);
 
       // 设置 cookies
-      return this.setCookieArray(parsedCookies);
+      return this.setCookiesArray(parsedCookies);
     }
 
     /**
@@ -2086,40 +2164,40 @@ var CookieStore = function () {
       var saveCookies = [];
 
       // 获取需要持久化的 cookie
-      var _iteratorNormalCompletion7 = true;
-      var _didIteratorError7 = false;
-      var _iteratorError7 = undefined;
+      var _iteratorNormalCompletion6 = true;
+      var _didIteratorError6 = false;
+      var _iteratorError6 = undefined;
 
       try {
-        for (var _iterator7 = _getIterator(this.__cookiesMap.values()), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-          var cookies = _step7.value;
-          var _iteratorNormalCompletion8 = true;
-          var _didIteratorError8 = false;
-          var _iteratorError8 = undefined;
+        for (var _iterator6 = _getIterator(this.__cookiesMap.values()), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+          var cookies = _step6.value;
+          var _iteratorNormalCompletion7 = true;
+          var _didIteratorError7 = false;
+          var _iteratorError7 = undefined;
 
           try {
-            for (var _iterator8 = _getIterator(cookies.values()), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-              var cookie = _step8.value;
+            for (var _iterator7 = _getIterator(cookies.values()), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+              var cookie = _step7.value;
 
-              if (cookie.validate()) {
-                // 只存储可持久化 cookie
-                if (cookie.isPersistence()) saveCookies.push(cookie);
-              } else {
+              if (cookie.isExpired()) {
                 // 清除无效 cookie
-                cookies.delete(key);
+                cookies.delete(cookie.name);
+              } else if (cookie.isPersistence()) {
+                // 只存储可持久化 cookie
+                saveCookies.push(cookie);
               }
             }
           } catch (err) {
-            _didIteratorError8 = true;
-            _iteratorError8 = err;
+            _didIteratorError7 = true;
+            _iteratorError7 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion8 && _iterator8.return) {
-                _iterator8.return();
+              if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                _iterator7.return();
               }
             } finally {
-              if (_didIteratorError8) {
-                throw _iteratorError8;
+              if (_didIteratorError7) {
+                throw _iteratorError7;
               }
             }
           }
@@ -2127,16 +2205,16 @@ var CookieStore = function () {
 
         // 保存到本地存储
       } catch (err) {
-        _didIteratorError7 = true;
-        _iteratorError7 = err;
+        _didIteratorError6 = true;
+        _iteratorError6 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion7 && _iterator7.return) {
-            _iterator7.return();
+          if (!_iteratorNormalCompletion6 && _iterator6.return) {
+            _iterator6.return();
           }
         } finally {
-          if (_didIteratorError7) {
-            throw _iteratorError7;
+          if (_didIteratorError6) {
+            throw _iteratorError6;
           }
         }
       }
@@ -2160,29 +2238,7 @@ var CookieStore = function () {
       });
 
       // 转化为 cookie map 对象
-      return this.setCookieArray(cookies);
-    }
-
-    /**
-     * 根据域名获取该域名的 cookie 作用域范围列表
-     * @param  {String} domain 指定域名
-     * @return {String}        cookie 作用域范围列表
-     */
-
-  }, {
-    key: '__getCookieScopeDomain',
-    value: function __getCookieScopeDomain() {
-      var domain = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-
-      if (!domain) return [];
-
-      // 获取 cookie 作用域范围列表
-      domain = domain.replace(/^\.+/ig, '');
-      var scopes = domain.split('.').map(function (k) {
-        return ['.', domain.slice(domain.indexOf(k))].join('');
-      });
-
-      return [domain].concat(scopes);
+      return this.setCookiesArray(cookies);
     }
   }]);
 
@@ -2209,9 +2265,10 @@ var cookieStore = function (wx, request) {
     if (options.cookie) {
       // 域名
       var domain = (options.url || '').split('/')[2];
+      var path = options.url.split(domain).pop();
 
       // 获取请求 cookies
-      var requestCookies = cookieStore.getRequestCookies(domain);
+      var requestCookies = cookieStore.getRequestCookies(domain, path);
 
       // 请求时带上设置的 cookies
       options.header = options.header || {};

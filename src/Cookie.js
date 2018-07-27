@@ -1,4 +1,5 @@
 import cookieParser from 'set-cookie-parser'
+import util from './util'
 
 /**
  * Cookie 类
@@ -12,7 +13,7 @@ class Cookie {
     this.value = props.value || ''
     // other
     this.domain = props.domain || ''
-    this.path = props.path || ''
+    this.path = props.path || '/'
     this.expires = props.expires ? new Date(props.expires) : null
     this.maxAge = props.maxAge ? parseInt(props.maxAge) : null
     this.httpOnly = !!props.httpOnly
@@ -47,21 +48,21 @@ class Cookie {
    * 验证 cookie 是否还有效
    * @return {Boolean} 是否有效
    */
-  validate () {
+  isExpired () {
     // maxAge 为 0，无效
     if (this.maxAge === 0) {
-      return false
+      return true
     }
     // 存活秒数超出 maxAge，无效
     if (this.maxAge > 0) {
       let seconds = (Date.now() - this.dateTime.getTime()) / 1000
-      return seconds < this.maxAge
+      return seconds > this.maxAge
     }
     // expires 小于当前时间，无效
     if (this.expires && this.expires < new Date()) {
-      return false
+      return true
     }
-    return true
+    return false
   }
 
   /**
@@ -70,6 +71,25 @@ class Cookie {
    */
   isPersistence () {
     return this.maxAge ? this.maxAge > 0 : true
+  }
+
+  /**
+   * 验证 cookie 是否在指定的 domain 范围内
+   * @param  {String}  domain    域名
+   * @return {Boolean}           是否在指定的 domain 范围内
+   */
+  isInDomain (domain) {
+    let scopeDomains = util.getCookieScopeDomain(domain)
+    return scopeDomains.indexOf(this.domain) >= 0
+  }
+
+  /**
+   * 验证 cookie 是否在指定的 path 范围内
+   * @param  {String}  path    url路径
+   * @return {Boolean}         是否在指定的 path 范围内
+   */
+  isInPath (path) {
+    return path.indexOf(this.path) === 0 || this.path.replace(/\/$/, '') === path
   }
 
   /**

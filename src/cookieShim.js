@@ -20,9 +20,10 @@ const cookieStore = (function (wx, request) {
     if (options.cookie) {
       // 域名
       let domain = (options.url || '').split('/')[2]
+      let path = options.url.split(domain).pop()
 
       // 获取请求 cookies
-      let requestCookies = cookieStore.getRequestCookies(domain)
+      let requestCookies = cookieStore.getRequestCookies(domain, path)
 
       // 请求时带上设置的 cookies
       options.header = options.header || {}
