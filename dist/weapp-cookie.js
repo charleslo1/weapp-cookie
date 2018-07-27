@@ -2284,7 +2284,7 @@ var cookieStore = function (wx, request) {
         // 获取响应 cookies
         var responseCookies = response.header['set-cookie'];
         // 设置 cookies，以便下次请求带上
-        cookieStore.setResponseCookies(domain, responseCookies);
+        cookieStore.setResponseCookies(responseCookies, domain);
         successCallback && successCallback(response);
       };
     }
