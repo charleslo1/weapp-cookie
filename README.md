@@ -143,20 +143,6 @@ cookies.getCookie(String name, String domain)
 cookies.getCookies(String domain)
 
 /**
-* 获取 cookies Array 数组
-* @param  {String} [domain]  指定域名（可选，不指定则获取包含所有域名的 cookie 数组）
-* @return {Array}            Cookie 对象数组
-*/
-cookies.getCookiesArray(String domain)
-
-/**
-* 批量设置 cookie
-* @param  {Array} cookies  Cookie 对象数组
-* @return {Map}            cookies Map 对象
-*/
-cookies.setCookiesArray (Array cookies)
-
-/**
 * 清除 cookie
 * @param  {String} [domain]  指定域名（可选，不指定则清除所有域名 cookie）
 * @return {Boolean}          是否清除成功
