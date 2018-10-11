@@ -26,7 +26,7 @@ cp -rf ./node_modules/ ./vendor/
 
 ``` js
 // app.js
-import './vendor/weapp-cookie/index'
+import './vendor/weapp-cookie/dist/weapp-cookie'
 
 // tips: 使用 wepy/mpvue 可以直接在入口 js 引入 weapp-cookie 模块
 // import 'weapp-cookie'
