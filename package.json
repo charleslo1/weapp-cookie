@@ -4,7 +4,7 @@
   "description": "一行代码让微信小程序支持 cookie，以保证基于 cookie 的服务器会话机制不会失效，与 web 端共用会话机制",
   "main": "dist/weapp-cookie.js",
   "scripts": {
-    "build": "gulp guild",
+    "build": "gulp build",
     "lint": "gulp lint",
     "test": "mocha"
   },
@@ -40,6 +40,7 @@
     "gulp-eslint": "^4.0.0",
     "gulp-watch": "^4.3.11",
     "gulp-webserver": "^0.9.1",
+    "mocha": "^5.2.0",
     "rollup": "^0.49.3",
     "rollup-plugin-babel": "^3.0.7",
     "rollup-plugin-commonjs": "^8.2.1",
