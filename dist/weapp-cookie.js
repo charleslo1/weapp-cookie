@@ -195,6 +195,20 @@ $export.U = 64;  // safe
 $export.R = 128; // real proto method for `library`
 var _export = $export;
 
+// 19.1.2.4 / 15.2.3.6 Object.defineProperty(O, P, Attributes)
+_export(_export.S + _export.F * !_descriptors, 'Object', { defineProperty: _objectDp.f });
+
+var $Object = _core.Object;
+var defineProperty$1 = function defineProperty(it, key, desc) {
+  return $Object.defineProperty(it, key, desc);
+};
+
+var defineProperty = createCommonjsModule(function (module) {
+module.exports = { "default": defineProperty$1, __esModule: true };
+});
+
+var _Object$defineProperty = unwrapExports(defineProperty);
+
 var toString = {}.toString;
 
 var _cof = function (it) {
@@ -322,29 +336,71 @@ var _objectKeys = Object.keys || function keys(O) {
   return _objectKeysInternal(O, _enumBugKeys);
 };
 
-var _objectDps = _descriptors ? Object.defineProperties : function defineProperties(O, Properties) {
-  _anObject(O);
-  var keys = _objectKeys(Properties);
-  var length = keys.length;
-  var i = 0;
-  var P;
-  while (length > i) _objectDp.f(O, P = keys[i++], Properties[P]);
-  return O;
+var f$1 = Object.getOwnPropertySymbols;
+
+var _objectGops = {
+	f: f$1
 };
 
-// 19.1.2.3 / 15.2.3.7 Object.defineProperties(O, Properties)
-_export(_export.S + _export.F * !_descriptors, 'Object', { defineProperties: _objectDps });
+var f$2 = {}.propertyIsEnumerable;
 
-var $Object = _core.Object;
-var defineProperties$1 = function defineProperties(T, D) {
-  return $Object.defineProperties(T, D);
+var _objectPie = {
+	f: f$2
 };
 
-var defineProperties = createCommonjsModule(function (module) {
-module.exports = { "default": defineProperties$1, __esModule: true };
+// 7.1.13 ToObject(argument)
+
+var _toObject = function (it) {
+  return Object(_defined(it));
+};
+
+'use strict';
+// 19.1.2.1 Object.assign(target, source, ...)
+
+
+
+
+
+var $assign = Object.assign;
+
+// should work with symbols and should have deterministic property order (V8 bug)
+var _objectAssign = !$assign || _fails(function () {
+  var A = {};
+  var B = {};
+  // eslint-disable-next-line no-undef
+  var S = Symbol();
+  var K = 'abcdefghijklmnopqrst';
+  A[S] = 7;
+  K.split('').forEach(function (k) { B[k] = k; });
+  return $assign({}, A)[S] != 7 || Object.keys($assign({}, B)).join('') != K;
+}) ? function assign(target, source) { // eslint-disable-line no-unused-vars
+  var T = _toObject(target);
+  var aLen = arguments.length;
+  var index = 1;
+  var getSymbols = _objectGops.f;
+  var isEnum = _objectPie.f;
+  while (aLen > index) {
+    var S = _iobject(arguments[index++]);
+    var keys = getSymbols ? _objectKeys(S).concat(getSymbols(S)) : _objectKeys(S);
+    var length = keys.length;
+    var j = 0;
+    var key;
+    while (length > j) if (isEnum.call(S, key = keys[j++])) T[key] = S[key];
+  } return T;
+} : $assign;
+
+// 19.1.3.1 Object.assign(target, source)
+
+
+_export(_export.S + _export.F, 'Object', { assign: _objectAssign });
+
+var assign$1 = _core.Object.assign;
+
+var assign = createCommonjsModule(function (module) {
+module.exports = { "default": assign$1, __esModule: true };
 });
 
-var _Object$defineProperties = unwrapExports(defineProperties);
+var _Object$assign = unwrapExports(assign);
 
 var _addToUnscopables = function () { /* empty */ };
 
@@ -355,6 +411,16 @@ var _iterStep = function (done, value) {
 var _iterators = {};
 
 var _redefine = _hide;
+
+var _objectDps = _descriptors ? Object.defineProperties : function defineProperties(O, Properties) {
+  _anObject(O);
+  var keys = _objectKeys(Properties);
+  var length = keys.length;
+  var i = 0;
+  var P;
+  while (length > i) _objectDp.f(O, P = keys[i++], Properties[P]);
+  return O;
+};
 
 var document$1 = _global.document;
 var _html = document$1 && document$1.documentElement;
@@ -435,12 +501,6 @@ _hide(IteratorPrototype, _wks('iterator'), function () { return this; });
 var _iterCreate = function (Constructor, NAME, next) {
   Constructor.prototype = _objectCreate(IteratorPrototype, { next: _propertyDesc(1, next) });
   _setToStringTag(Constructor, NAME + ' Iterator');
-};
-
-// 7.1.13 ToObject(argument)
-
-var _toObject = function (it) {
-  return Object(_defined(it));
 };
 
 // 19.1.2.9 / 15.2.3.2 Object.getPrototypeOf(O)
@@ -1240,66 +1300,6 @@ module.exports = { "default": map$1, __esModule: true };
 
 var _Map = unwrapExports(map);
 
-var f$1 = Object.getOwnPropertySymbols;
-
-var _objectGops = {
-	f: f$1
-};
-
-var f$2 = {}.propertyIsEnumerable;
-
-var _objectPie = {
-	f: f$2
-};
-
-'use strict';
-// 19.1.2.1 Object.assign(target, source, ...)
-
-
-
-
-
-var $assign = Object.assign;
-
-// should work with symbols and should have deterministic property order (V8 bug)
-var _objectAssign = !$assign || _fails(function () {
-  var A = {};
-  var B = {};
-  // eslint-disable-next-line no-undef
-  var S = Symbol();
-  var K = 'abcdefghijklmnopqrst';
-  A[S] = 7;
-  K.split('').forEach(function (k) { B[k] = k; });
-  return $assign({}, A)[S] != 7 || Object.keys($assign({}, B)).join('') != K;
-}) ? function assign(target, source) { // eslint-disable-line no-unused-vars
-  var T = _toObject(target);
-  var aLen = arguments.length;
-  var index = 1;
-  var getSymbols = _objectGops.f;
-  var isEnum = _objectPie.f;
-  while (aLen > index) {
-    var S = _iobject(arguments[index++]);
-    var keys = getSymbols ? _objectKeys(S).concat(getSymbols(S)) : _objectKeys(S);
-    var length = keys.length;
-    var j = 0;
-    var key;
-    while (length > j) if (isEnum.call(S, key = keys[j++])) T[key] = S[key];
-  } return T;
-} : $assign;
-
-// 19.1.3.1 Object.assign(target, source)
-
-
-_export(_export.S + _export.F, 'Object', { assign: _objectAssign });
-
-var assign$1 = _core.Object.assign;
-
-var assign = createCommonjsModule(function (module) {
-module.exports = { "default": assign$1, __esModule: true };
-});
-
-var _Object$assign = unwrapExports(assign);
-
 var classCallCheck = createCommonjsModule(function (module, exports) {
 "use strict";
 
@@ -1313,20 +1313,6 @@ exports.default = function (instance, Constructor) {
 });
 
 var _classCallCheck = unwrapExports(classCallCheck);
-
-// 19.1.2.4 / 15.2.3.6 Object.defineProperty(O, P, Attributes)
-_export(_export.S + _export.F * !_descriptors, 'Object', { defineProperty: _objectDp.f });
-
-var $Object$1 = _core.Object;
-var defineProperty$2 = function defineProperty(it, key, desc) {
-  return $Object$1.defineProperty(it, key, desc);
-};
-
-var defineProperty = createCommonjsModule(function (module) {
-module.exports = { "default": defineProperty$2, __esModule: true };
-});
-
-unwrapExports(defineProperty);
 
 var createClass = createCommonjsModule(function (module, exports) {
 "use strict";
@@ -2293,12 +2279,20 @@ var cookieStore = function (wx, request) {
     request(options);
   }
 
-  // 使用 requestProxy 覆盖微信原生 request
-  _Object$defineProperties(wx, {
-    request: {
-      value: requestProxy
+  try {
+    // 使用 requestProxy 覆盖微信原生 request
+    Object.defineProperty(wx, 'requestWithCookie', { value: requestProxy });
+    Object.defineProperty(wx, 'request', { value: requestProxy });
+  } catch (err) {}
+
+  // 配置
+  cookieStore.config = function (options) {
+    options = _Object$assign({ requestAlias: 'requestWithCookie' }, options);
+    // 配置请求别名
+    if (options.requestAlias) {
+      _Object$defineProperty(wx, options.requestAlias, { value: requestProxy });
     }
-  });
+  };
 
   // 返回 cookieStore
   return cookieStore;

@@ -48,12 +48,20 @@ const cookieStore = (function (wx, request) {
     request(options)
   }
 
-  // 使用 requestProxy 覆盖微信原生 request
-  Object.defineProperties(wx, {
-    request: {
-      value: requestProxy
+  try {
+    // 使用 requestProxy 覆盖微信原生 request
+    Object.defineProperty(wx, 'requestWithCookie', { value: requestProxy })
+    Object.defineProperty(wx, 'request', { value: requestProxy })
+  } catch (err) { }
+
+  // 配置
+  cookieStore.config = function (options) {
+    options = Object.assign({ requestAlias: 'requestWithCookie' }, options)
+    // 配置请求别名
+    if (options.requestAlias) {
+      Object.defineProperty(wx, options.requestAlias, { value: requestProxy })
     }
-  })
+  }
 
   // 返回 cookieStore
   return cookieStore

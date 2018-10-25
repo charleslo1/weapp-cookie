@@ -83,6 +83,31 @@ let hasToken = cookies.has('uid', 'example.com')
 
 ```
 
+使用和配置别名：由于微信小程序的安全机制，[在小程序插件环境下 wx.request 不允许被重写](https://developers.weixin.qq.com/community/develop/doc/000cc0f0c70250ea51e6faa6156400)，所以需使用内置别名或自定义别名来支持 cookie 请求
+
+```
+import cookies from 'weapp-cookie'
+
+// 使用内置别名
+wx.requestWithCookie({
+    url: 'https://example.com/user/current',
+    success: function (res) {
+        console.log(res)
+    }
+})
+
+// 配置自定义别名
+cookies.config({ requestAlias: 'requestx' })
+
+// 使用自定义别名
+wx.requestx({
+    url: 'https://example.com/user/current',
+    success: function (res) {
+        console.log(res)
+    }
+})
+```
+
 # Api
 
 ## CookieStore
