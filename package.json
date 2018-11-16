@@ -1,6 +1,6 @@
 {
   "name": "weapp-cookie",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "一行代码让微信小程序支持 cookie，以保证基于 cookie 的服务器会话机制不会失效，与 web 端共用会话机制",
   "main": "dist/weapp-cookie.js",
   "scripts": {
