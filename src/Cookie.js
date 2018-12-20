@@ -41,7 +41,7 @@ class Cookie {
    * @return {Cookie}        this
    */
   merge (cookie) {
-    return Object(this, cookie)
+    return Object.assign(this, cookie)
   }
 
   /**
