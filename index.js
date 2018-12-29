@@ -1,3 +1,3 @@
-import cookieShim from './src/cookieShim'
+const cookieShim = require('./dist/weapp-cookie')
 
-export default cookieShim
+module.exports = cookieShim
