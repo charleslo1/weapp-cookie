@@ -1600,7 +1600,7 @@ var Cookie = function () {
   }, {
     key: 'merge',
     value: function merge(cookie) {
-      return Object(this, cookie);
+      return _Object$assign(this, cookie);
     }
 
     /**
