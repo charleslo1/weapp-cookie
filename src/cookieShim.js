@@ -45,7 +45,7 @@ const cookieStore = (function (wx, request) {
     }
 
     // 发送网络请求
-    request(options)
+    return request(options)
   }
 
   try {

@@ -1349,7 +1349,8 @@ var _createClass = unwrapExports(createClass);
 "use strict";
 
 var defaultParseOptions = {
-  decodeValues: true
+  decodeValues: true,
+  map: false
 };
 
 function extend(target, source) {
@@ -1416,9 +1417,18 @@ function parse(input, options) {
     options = defaultOptions;
   }
 
-  return input.filter(isNonEmptyString).map(function(str) {
-    return parseString(str, options);
-  });
+  if (!options.map) {
+    return input.filter(isNonEmptyString).map(function(str) {
+      return parseString(str, options);
+    });
+  } else {
+    var cookies = {};
+    return input.filter(isNonEmptyString).reduce(function(cookies, str) {
+      var cookie = parseString(str, options);
+      cookies[cookie.name] = cookie;
+      return cookies;
+    }, cookies);
+  }
 }
 
 /*
@@ -2276,7 +2286,7 @@ var cookieStore = function (wx, request) {
     }
 
     // 发送网络请求
-    request(options);
+    return request(options);
   }
 
   try {
