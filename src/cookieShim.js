@@ -3,17 +3,16 @@ import CookieStore from './CookieStore'
 /**
  * 微信 Cookie 代理
  * @param  {Object} wx      微信 API 对象
- * @param  {Object} request 微信请求函数
  */
-const cookieStore = (function (wx, request) {
+const cookieStore = (function (wx) {
   // 创建 cookieStore 实例
   const cookieStore = new CookieStore()
 
   /**
-   * 定义请求代理函数
+   * 定义请求 cookie 代理函数
    * @param  {Object} options 请求参数
    */
-  function requestProxy (options) {
+  function cookieRequestProxy (options) {
     // 是否启用 cookie（默认 true）
     options.cookie = options.cookie === undefined || !!options.cookie
     options.dataType = options.dataType || 'json'
@@ -37,35 +36,74 @@ const cookieStore = (function (wx, request) {
       let successCallback = options.success
       options.success = function (response) {
         // 获取响应 cookies
-        let responseCookies = response.header['Set-Cookie'] || response.header['set-cookie'] || ''
+        let responseCookies = response.header ? response.header['Set-Cookie'] || response.header['set-cookie'] : ''
         // 设置 cookies，以便下次请求带上
-        cookieStore.setResponseCookies(responseCookies, domain)
+        if (responseCookies) cookieStore.setResponseCookies(responseCookies, domain)
+        // 调用成功回调函数
         successCallback && successCallback(response)
       }
     }
 
     // 发送网络请求
-    return request(options)
+    return this(options)
   }
 
+  // 绑定新的
+  const requestProxy = cookieRequestProxy.bind(wx.request)
+  const uploadFileProxy = cookieRequestProxy.bind(wx.uploadFile)
+  const downloadFileProxy = cookieRequestProxy.bind(wx.downloadFile)
+
   try {
-    // 使用 requestProxy 覆盖微信原生 request
-    Object.defineProperty(wx, 'requestWithCookie', { value: requestProxy })
-    Object.defineProperty(wx, 'request', { value: requestProxy })
-  } catch (err) { }
+    // 使用 requestProxy 覆盖微信原生 request、uploadFile
+    Object.defineProperties(wx, {
+      // request
+      request: {
+        value: requestProxy
+      },
+      requestWithCookie: {
+        value: requestProxy
+      },
+      // uploadFile
+      uploadFile: {
+        value: uploadFileProxy
+      },
+      uploadFileWithCookie: {
+        value: uploadFileProxy
+      },
+      // downloadFile
+      downloadFile: {
+        value: downloadFileProxy
+      },
+      downloadFileWithCookie: {
+        value: downloadFileProxy
+      }
+    })
+  } catch (err) {
+    console.error('weapp-cookie: ', err)
+  }
 
   // 配置
   cookieStore.config = function (options) {
-    options = Object.assign({ requestAlias: 'requestWithCookie' }, options)
+    options = Object.assign({
+      requestAlias: 'requestWithCookie',
+      uploadFileAlias: 'uploadFileWithCookie',
+      downloadFileAlias: 'downloadFileWithCookie'
+    }, options)
     // 配置请求别名
     if (options.requestAlias) {
       Object.defineProperty(wx, options.requestAlias, { value: requestProxy })
+    }
+    if (options.uploadFileAlias) {
+      Object.defineProperty(wx, options.uploadFileAlias, { value: uploadFileProxy })
+    }
+    if (options.downloadFileAlias) {
+      Object.defineProperty(wx, options.downloadFileAlias, { value: downloadFileProxy })
     }
   }
 
   // 返回 cookieStore
   return cookieStore
-})(wx, wx.request)
+})(wx)
 
 // 导出 cookieStore 实例
 export default cookieStore
