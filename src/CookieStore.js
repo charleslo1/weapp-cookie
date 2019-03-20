@@ -1,6 +1,7 @@
 import Cookie from './Cookie'
 import cookieParser from 'set-cookie-parser'
 import util from './util'
+import api from './api'
 
 /**
  * CookieStore 类
@@ -301,7 +302,7 @@ class CookieStore {
     }
 
     // 保存到本地存储
-    wx.setStorageSync(this.__storageKey, saveCookies)
+    api.setStorageSync(this.__storageKey, saveCookies)
   }
 
   /**
@@ -309,7 +310,7 @@ class CookieStore {
    */
   __readFromStorage () {
     // 从本地存储读取 cookie 数据数组
-    let cookies = wx.getStorageSync(this.__storageKey) || []
+    let cookies = api.getStorageSync(this.__storageKey) || []
 
     // 转化为 Cookie 对象数组
     cookies = cookies.map((item) => new Cookie(item))

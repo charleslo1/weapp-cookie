@@ -1702,6 +1702,11 @@ var Cookie = function () {
 }();
 
 /**
+ * 适配小程序API宿主对象
+ */
+var api = wx || window.wx || window.tt || window.my || window.swan;
+
+/**
  * CookieStore 类
  */
 
@@ -2229,7 +2234,7 @@ var CookieStore = function () {
         }
       }
 
-      wx.setStorageSync(this.__storageKey, saveCookies);
+      api.setStorageSync(this.__storageKey, saveCookies);
     }
 
     /**
@@ -2240,7 +2245,7 @@ var CookieStore = function () {
     key: '__readFromStorage',
     value: function __readFromStorage() {
       // 从本地存储读取 cookie 数据数组
-      var cookies = wx.getStorageSync(this.__storageKey) || [];
+      var cookies = api.getStorageSync(this.__storageKey) || [];
 
       // 转化为 Cookie 对象数组
       cookies = cookies.map(function (item) {
@@ -2257,9 +2262,8 @@ var CookieStore = function () {
 
 /**
  * 微信 Cookie 代理
- * @param  {Object} wx      微信 API 对象
  */
-var cookieStore = function (wx) {
+var cookieStore = function () {
   // 创建 cookieStore 实例
   var cookieStore = new CookieStore();
 
@@ -2304,13 +2308,13 @@ var cookieStore = function (wx) {
   }
 
   // 绑定新的
-  var requestProxy = cookieRequestProxy.bind(wx.request);
-  var uploadFileProxy = cookieRequestProxy.bind(wx.uploadFile);
-  var downloadFileProxy = cookieRequestProxy.bind(wx.downloadFile);
+  var requestProxy = cookieRequestProxy.bind(api.request);
+  var uploadFileProxy = cookieRequestProxy.bind(api.uploadFile);
+  var downloadFileProxy = cookieRequestProxy.bind(api.downloadFile);
 
   try {
     // 使用 requestProxy 覆盖微信原生 request、uploadFile
-    _Object$defineProperties(wx, {
+    _Object$defineProperties(api, {
       // request
       request: {
         value: requestProxy
@@ -2346,19 +2350,19 @@ var cookieStore = function (wx) {
     }, options);
     // 配置请求别名
     if (options.requestAlias) {
-      _Object$defineProperty(wx, options.requestAlias, { value: requestProxy });
+      _Object$defineProperty(api, options.requestAlias, { value: requestProxy });
     }
     if (options.uploadFileAlias) {
-      _Object$defineProperty(wx, options.uploadFileAlias, { value: uploadFileProxy });
+      _Object$defineProperty(api, options.uploadFileAlias, { value: uploadFileProxy });
     }
     if (options.downloadFileAlias) {
-      _Object$defineProperty(wx, options.downloadFileAlias, { value: downloadFileProxy });
+      _Object$defineProperty(api, options.downloadFileAlias, { value: downloadFileProxy });
     }
   };
 
   // 返回 cookieStore
   return cookieStore;
-}(wx);
+}();
 
 return cookieStore;
 

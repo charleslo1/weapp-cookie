@@ -1,10 +1,10 @@
 import CookieStore from './CookieStore'
+import api from './api'
 
 /**
  * 微信 Cookie 代理
- * @param  {Object} wx      微信 API 对象
  */
-const cookieStore = (function (wx) {
+const cookieStore = (function () {
   // 创建 cookieStore 实例
   const cookieStore = new CookieStore()
 
@@ -49,13 +49,13 @@ const cookieStore = (function (wx) {
   }
 
   // 绑定新的
-  const requestProxy = cookieRequestProxy.bind(wx.request)
-  const uploadFileProxy = cookieRequestProxy.bind(wx.uploadFile)
-  const downloadFileProxy = cookieRequestProxy.bind(wx.downloadFile)
+  const requestProxy = cookieRequestProxy.bind(api.request)
+  const uploadFileProxy = cookieRequestProxy.bind(api.uploadFile)
+  const downloadFileProxy = cookieRequestProxy.bind(api.downloadFile)
 
   try {
     // 使用 requestProxy 覆盖微信原生 request、uploadFile
-    Object.defineProperties(wx, {
+    Object.defineProperties(api, {
       // request
       request: {
         value: requestProxy
@@ -91,19 +91,19 @@ const cookieStore = (function (wx) {
     }, options)
     // 配置请求别名
     if (options.requestAlias) {
-      Object.defineProperty(wx, options.requestAlias, { value: requestProxy })
+      Object.defineProperty(api, options.requestAlias, { value: requestProxy })
     }
     if (options.uploadFileAlias) {
-      Object.defineProperty(wx, options.uploadFileAlias, { value: uploadFileProxy })
+      Object.defineProperty(api, options.uploadFileAlias, { value: uploadFileProxy })
     }
     if (options.downloadFileAlias) {
-      Object.defineProperty(wx, options.downloadFileAlias, { value: downloadFileProxy })
+      Object.defineProperty(api, options.downloadFileAlias, { value: downloadFileProxy })
     }
   }
 
   // 返回 cookieStore
   return cookieStore
-})(wx)
+})()
 
 // 导出 cookieStore 实例
 export default cookieStore
