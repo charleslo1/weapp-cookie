@@ -402,16 +402,6 @@ module.exports = { "default": assign$1, __esModule: true };
 
 var _Object$assign = unwrapExports(assign);
 
-var _addToUnscopables = function () { /* empty */ };
-
-var _iterStep = function (done, value) {
-  return { value: value, done: !!done };
-};
-
-var _iterators = {};
-
-var _redefine = _hide;
-
 var _objectDps = _descriptors ? Object.defineProperties : function defineProperties(O, Properties) {
   _anObject(O);
   var keys = _objectKeys(Properties);
@@ -421,6 +411,30 @@ var _objectDps = _descriptors ? Object.defineProperties : function definePropert
   while (length > i) _objectDp.f(O, P = keys[i++], Properties[P]);
   return O;
 };
+
+// 19.1.2.3 / 15.2.3.7 Object.defineProperties(O, Properties)
+_export(_export.S + _export.F * !_descriptors, 'Object', { defineProperties: _objectDps });
+
+var $Object$1 = _core.Object;
+var defineProperties$1 = function defineProperties(T, D) {
+  return $Object$1.defineProperties(T, D);
+};
+
+var defineProperties = createCommonjsModule(function (module) {
+module.exports = { "default": defineProperties$1, __esModule: true };
+});
+
+var _Object$defineProperties = unwrapExports(defineProperties);
+
+var _addToUnscopables = function () { /* empty */ };
+
+var _iterStep = function (done, value) {
+  return { value: value, done: !!done };
+};
+
+var _iterators = {};
+
+var _redefine = _hide;
 
 var document$1 = _global.document;
 var _html = document$1 && document$1.documentElement;
@@ -1688,6 +1702,11 @@ var Cookie = function () {
 }();
 
 /**
+ * 适配小程序API宿主对象
+ */
+var api = wx || window.wx || window.tt || window.my || window.swan;
+
+/**
  * CookieStore 类
  */
 
@@ -2215,7 +2234,7 @@ var CookieStore = function () {
         }
       }
 
-      wx.setStorageSync(this.__storageKey, saveCookies);
+      api.setStorageSync(this.__storageKey, saveCookies);
     }
 
     /**
@@ -2226,7 +2245,7 @@ var CookieStore = function () {
     key: '__readFromStorage',
     value: function __readFromStorage() {
       // 从本地存储读取 cookie 数据数组
-      var cookies = wx.getStorageSync(this.__storageKey) || [];
+      var cookies = api.getStorageSync(this.__storageKey) || [];
 
       // 转化为 Cookie 对象数组
       cookies = cookies.map(function (item) {
@@ -2243,18 +2262,16 @@ var CookieStore = function () {
 
 /**
  * 微信 Cookie 代理
- * @param  {Object} wx      微信 API 对象
- * @param  {Object} request 微信请求函数
  */
-var cookieStore = function (wx, request) {
+var cookieStore = function () {
   // 创建 cookieStore 实例
   var cookieStore = new CookieStore();
 
   /**
-   * 定义请求代理函数
+   * 定义请求 cookie 代理函数
    * @param  {Object} options 请求参数
    */
-  function requestProxy(options) {
+  function cookieRequestProxy(options) {
     // 是否启用 cookie（默认 true）
     options.cookie = options.cookie === undefined || !!options.cookie;
     options.dataType = options.dataType || 'json';
@@ -2278,35 +2295,74 @@ var cookieStore = function (wx, request) {
       var successCallback = options.success;
       options.success = function (response) {
         // 获取响应 cookies
-        var responseCookies = response.header['Set-Cookie'] || response.header['set-cookie'] || '';
+        var responseCookies = response.header ? response.header['Set-Cookie'] || response.header['set-cookie'] : '';
         // 设置 cookies，以便下次请求带上
-        cookieStore.setResponseCookies(responseCookies, domain);
+        if (responseCookies) cookieStore.setResponseCookies(responseCookies, domain);
+        // 调用成功回调函数
         successCallback && successCallback(response);
       };
     }
 
     // 发送网络请求
-    return request(options);
+    return this(options);
   }
 
+  // 绑定新的
+  var requestProxy = cookieRequestProxy.bind(api.request);
+  var uploadFileProxy = cookieRequestProxy.bind(api.uploadFile);
+  var downloadFileProxy = cookieRequestProxy.bind(api.downloadFile);
+
   try {
-    // 使用 requestProxy 覆盖微信原生 request
-    Object.defineProperty(wx, 'requestWithCookie', { value: requestProxy });
-    Object.defineProperty(wx, 'request', { value: requestProxy });
-  } catch (err) {}
+    // 使用 requestProxy 覆盖微信原生 request、uploadFile
+    _Object$defineProperties(api, {
+      // request
+      request: {
+        value: requestProxy
+      },
+      requestWithCookie: {
+        value: requestProxy
+      },
+      // uploadFile
+      uploadFile: {
+        value: uploadFileProxy
+      },
+      uploadFileWithCookie: {
+        value: uploadFileProxy
+      },
+      // downloadFile
+      downloadFile: {
+        value: downloadFileProxy
+      },
+      downloadFileWithCookie: {
+        value: downloadFileProxy
+      }
+    });
+  } catch (err) {
+    console.error('weapp-cookie: ', err);
+  }
 
   // 配置
   cookieStore.config = function (options) {
-    options = _Object$assign({ requestAlias: 'requestWithCookie' }, options);
+    options = _Object$assign({
+      requestAlias: 'requestWithCookie',
+      uploadFileAlias: 'uploadFileWithCookie',
+      downloadFileAlias: 'downloadFileWithCookie'
+    }, options);
     // 配置请求别名
     if (options.requestAlias) {
-      _Object$defineProperty(wx, options.requestAlias, { value: requestProxy });
+      _Object$defineProperty(api, options.requestAlias, { value: requestProxy });
+    }
+    if (options.uploadFileAlias) {
+      _Object$defineProperty(api, options.uploadFileAlias, { value: uploadFileProxy });
+    }
+    if (options.downloadFileAlias) {
+      _Object$defineProperty(api, options.downloadFileAlias, { value: downloadFileProxy });
     }
   };
 
   // 返回 cookieStore
   return cookieStore;
-}(wx, wx.request);
+}();
 
 return cookieStore;
 
