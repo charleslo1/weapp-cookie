@@ -1,5 +1,6 @@
 import CookieStore from './CookieStore'
 import api from './api'
+import util from './util'
 
 /**
  * 微信 Cookie 代理
@@ -87,7 +88,8 @@ const cookieStore = (function () {
     options = Object.assign({
       requestAlias: 'requestWithCookie',
       uploadFileAlias: 'uploadFileWithCookie',
-      downloadFileAlias: 'downloadFileWithCookie'
+      downloadFileAlias: 'downloadFileWithCookie',
+      parseOptions: { decodeValues: false }
     }, options)
     // 配置请求别名
     if (options.requestAlias) {
@@ -98,6 +100,9 @@ const cookieStore = (function () {
     }
     if (options.downloadFileAlias) {
       Object.defineProperty(api, options.downloadFileAlias, { value: downloadFileProxy })
+    }
+    if (options.parseOptions) {
+      util.parseOptions = options.parseOptions
     }
   }
 

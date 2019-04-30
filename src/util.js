@@ -2,6 +2,10 @@
  * Util 类
  */
 class Util {
+  constructor () {
+    this.parseOptions = { decodeValues: false } // setCookie.parse 的 options
+  }
+
   /**
    * 根据域名获取该域名的 cookie 作用域范围列表
    * @param  {String} domain 指定域名

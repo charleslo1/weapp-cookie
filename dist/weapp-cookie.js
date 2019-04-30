@@ -1542,16 +1542,20 @@ setCookie.splitCookiesString = splitCookiesString_1;
 var Util = function () {
   function Util() {
     _classCallCheck(this, Util);
+
+    this.parseOptions = { decodeValues: false // setCookie.parse 的 options
+    };
   }
+
+  /**
+   * 根据域名获取该域名的 cookie 作用域范围列表
+   * @param  {String} domain 指定域名
+   * @return {String}        cookie 作用域范围列表
+   */
+
 
   _createClass(Util, [{
     key: 'getCookieScopeDomain',
-
-    /**
-     * 根据域名获取该域名的 cookie 作用域范围列表
-     * @param  {String} domain 指定域名
-     * @return {String}        cookie 作用域范围列表
-     */
     value: function getCookieScopeDomain() {
       var domain = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
 
@@ -1605,7 +1609,7 @@ var Cookie = function () {
     value: function set() {
       var setCookieStr = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
 
-      var cookie = setCookie.parse(setCookieStr)[0];
+      var cookie = setCookie.parse(setCookieStr, util.parseOptions)[0];
       if (cookie) {
         _Object$assign(this, cookie);
         // 更新设置时间
@@ -2346,7 +2350,8 @@ var cookieStore = function () {
     options = _Object$assign({
       requestAlias: 'requestWithCookie',
       uploadFileAlias: 'uploadFileWithCookie',
-      downloadFileAlias: 'downloadFileWithCookie'
+      downloadFileAlias: 'downloadFileWithCookie',
+      parseOptions: { decodeValues: false }
     }, options);
     // 配置请求别名
     if (options.requestAlias) {
@@ -2357,6 +2362,9 @@ var cookieStore = function () {
     }
     if (options.downloadFileAlias) {
       _Object$defineProperty(api, options.downloadFileAlias, { value: downloadFileProxy });
+    }
+    if (options.parseOptions) {
+      util.parseOptions = options.parseOptions;
     }
   };
 
