@@ -1720,7 +1720,7 @@ var CookieStore = function () {
     // storageKey
     this.__storageKey = '__cookie_store__';
     // cookies Map缓存（domain -> cookie 二级结构）
-    this.__cookiesMap = this.__readFromStorage();
+    this.__cookiesMap = this.__readFromStorage() || new _Map();
   }
 
   /**
@@ -2176,65 +2176,69 @@ var CookieStore = function () {
   }, {
     key: '__saveToStorage',
     value: function __saveToStorage() {
-      var saveCookies = [];
-
-      // 获取需要持久化的 cookie
-      var _iteratorNormalCompletion6 = true;
-      var _didIteratorError6 = false;
-      var _iteratorError6 = undefined;
-
       try {
-        for (var _iterator6 = _getIterator(this.__cookiesMap.values()), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-          var cookies = _step6.value;
-          var _iteratorNormalCompletion7 = true;
-          var _didIteratorError7 = false;
-          var _iteratorError7 = undefined;
+        var saveCookies = [];
 
-          try {
-            for (var _iterator7 = _getIterator(cookies.values()), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-              var cookie = _step7.value;
+        // 获取需要持久化的 cookie
+        var _iteratorNormalCompletion6 = true;
+        var _didIteratorError6 = false;
+        var _iteratorError6 = undefined;
 
-              if (cookie.isExpired()) {
-                // 清除无效 cookie
-                cookies.delete(cookie.name);
-              } else if (cookie.isPersistence()) {
-                // 只存储可持久化 cookie
-                saveCookies.push(cookie);
-              }
-            }
-          } catch (err) {
-            _didIteratorError7 = true;
-            _iteratorError7 = err;
-          } finally {
-            try {
-              if (!_iteratorNormalCompletion7 && _iterator7.return) {
-                _iterator7.return();
-              }
-            } finally {
-              if (_didIteratorError7) {
-                throw _iteratorError7;
-              }
-            }
-          }
-        }
-
-        // 保存到本地存储
-      } catch (err) {
-        _didIteratorError6 = true;
-        _iteratorError6 = err;
-      } finally {
         try {
-          if (!_iteratorNormalCompletion6 && _iterator6.return) {
-            _iterator6.return();
+          for (var _iterator6 = _getIterator(this.__cookiesMap.values()), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+            var cookies = _step6.value;
+            var _iteratorNormalCompletion7 = true;
+            var _didIteratorError7 = false;
+            var _iteratorError7 = undefined;
+
+            try {
+              for (var _iterator7 = _getIterator(cookies.values()), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+                var cookie = _step7.value;
+
+                if (cookie.isExpired()) {
+                  // 清除无效 cookie
+                  cookies.delete(cookie.name);
+                } else if (cookie.isPersistence()) {
+                  // 只存储可持久化 cookie
+                  saveCookies.push(cookie);
+                }
+              }
+            } catch (err) {
+              _didIteratorError7 = true;
+              _iteratorError7 = err;
+            } finally {
+              try {
+                if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                  _iterator7.return();
+                }
+              } finally {
+                if (_didIteratorError7) {
+                  throw _iteratorError7;
+                }
+              }
+            }
           }
+
+          // 保存到本地存储
+        } catch (err) {
+          _didIteratorError6 = true;
+          _iteratorError6 = err;
         } finally {
-          if (_didIteratorError6) {
-            throw _iteratorError6;
+          try {
+            if (!_iteratorNormalCompletion6 && _iterator6.return) {
+              _iterator6.return();
+            }
+          } finally {
+            if (_didIteratorError6) {
+              throw _iteratorError6;
+            }
           }
         }
-      }
 
-      api.setStorageSync(this.__storageKey, saveCookies);
+        api.setStorageSync(this.__storageKey, saveCookies);
+      } catch (err) {
+        console.warn('Cookie 存储异常：', err);
+      }
     }
 
     /**
@@ -2244,16 +2248,20 @@ var CookieStore = function () {
   }, {
     key: '__readFromStorage',
     value: function __readFromStorage() {
-      // 从本地存储读取 cookie 数据数组
-      var cookies = api.getStorageSync(this.__storageKey) || [];
+      try {
+        // 从本地存储读取 cookie 数据数组
+        var cookies = api.getStorageSync(this.__storageKey) || [];
 
-      // 转化为 Cookie 对象数组
-      cookies = cookies.map(function (item) {
-        return new Cookie(item);
-      });
+        // 转化为 Cookie 对象数组
+        cookies = cookies.map(function (item) {
+          return new Cookie(item);
+        });
 
-      // 转化为 cookie map 对象
-      return this.setCookiesArray(cookies);
+        // 转化为 cookie map 对象
+        return this.setCookiesArray(cookies);
+      } catch (err) {
+        console.warn('Cookie 读取异常：', err);
+      }
     }
   }]);
 
