@@ -1,6 +1,6 @@
 {
   "name": "weapp-cookie",
-  "version": "1.3.5",
+  "version": "1.3.6",
   "description": "一行代码让微信小程序支持 cookie，以保证基于 cookie 的服务器会话机制不会失效，与 web 端共用会话机制",
   "main": "dist/weapp-cookie.js",
   "files": [
@@ -37,7 +37,7 @@
     "babel-register": "^6.26.0",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-html": "^3.2.0",
-    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-import": "^2.17.3",
     "eslint-plugin-node": "^5.1.1",
     "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-standard": "^3.1.0",

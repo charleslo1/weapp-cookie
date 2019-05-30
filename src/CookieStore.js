@@ -14,7 +14,7 @@ class CookieStore {
     // storageKey
     this.__storageKey = '__cookie_store__'
     // cookies Map缓存（domain -> cookie 二级结构）
-    this.__cookiesMap = this.__readFromStorage()
+    this.__cookiesMap = this.__readFromStorage() || new Map()
   }
 
   /**
@@ -286,37 +286,45 @@ class CookieStore {
    * 将 cookies 保存到 Storage
    */
   __saveToStorage () {
-    let saveCookies = []
+    try {
+      let saveCookies = []
 
-    // 获取需要持久化的 cookie
-    for (let cookies of this.__cookiesMap.values()) {
-      for (let cookie of cookies.values()) {
-        if (cookie.isExpired()) {
-          // 清除无效 cookie
-          cookies.delete(cookie.name)
-        } else if (cookie.isPersistence()) {
-          // 只存储可持久化 cookie
-          saveCookies.push(cookie)
+      // 获取需要持久化的 cookie
+      for (let cookies of this.__cookiesMap.values()) {
+        for (let cookie of cookies.values()) {
+          if (cookie.isExpired()) {
+            // 清除无效 cookie
+            cookies.delete(cookie.name)
+          } else if (cookie.isPersistence()) {
+            // 只存储可持久化 cookie
+            saveCookies.push(cookie)
+          }
         }
       }
-    }
 
-    // 保存到本地存储
-    api.setStorageSync(this.__storageKey, saveCookies)
+      // 保存到本地存储
+      api.setStorageSync(this.__storageKey, saveCookies)
+    } catch (err) {
+      console.warn('Cookie 存储异常：', err)
+    }
   }
 
   /**
    * 从 Storage 读取 cookies
    */
   __readFromStorage () {
-    // 从本地存储读取 cookie 数据数组
-    let cookies = api.getStorageSync(this.__storageKey) || []
+    try {
+      // 从本地存储读取 cookie 数据数组
+      let cookies = api.getStorageSync(this.__storageKey) || []
 
-    // 转化为 Cookie 对象数组
-    cookies = cookies.map((item) => new Cookie(item))
+      // 转化为 Cookie 对象数组
+      cookies = cookies.map((item) => new Cookie(item))
 
-    // 转化为 cookie map 对象
-    return this.setCookiesArray(cookies)
+      // 转化为 cookie map 对象
+      return this.setCookiesArray(cookies)
+    } catch (err) {
+      console.warn('Cookie 读取异常：', err)
+    }
   }
 }
 
