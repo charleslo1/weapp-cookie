@@ -1694,7 +1694,7 @@ var Cookie = function () {
   }, {
     key: 'toString',
     value: function toString() {
-      return [this.name, this.value].join('=');
+      return [this.name, encodeURIComponent(this.value)].join('=');
     }
   }]);
 
