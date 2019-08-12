@@ -1565,6 +1565,20 @@ var Util = function () {
 
       return [domain].concat(scopes);
     }
+
+    /**
+     * 根据最新的 RFC 6265 标准化域名作用域
+     * @param  {String} domain 域名
+     * @return {String}        标准化后的域名
+     */
+
+  }, {
+    key: 'normalizeDomain',
+    value: function normalizeDomain() {
+      var domain = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+
+      return domain.replace(/^(\.*)?(?=\S)/ig, '.');
+    }
   }]);
 
   return Util;
@@ -1694,7 +1708,7 @@ var Cookie = function () {
   }, {
     key: 'toString',
     value: function toString() {
-      return [this.name, encodeURIComponent(this.value)].join('=');
+      return [this.name, this.value].join('=');
     }
   }]);
 
@@ -1855,6 +1869,8 @@ var CookieStore = function () {
       if (domain) {
         // 删除指定域名的 cookie
         var cookies = this.__cookiesMap.get(domain);
+        cookies && cookies.delete(name);
+        cookies = this.__cookiesMap.get(util.normalizeDomain(domain));
         cookies && cookies.delete(name);
       } else {
         // 删除所有域名的 cookie
@@ -2150,7 +2166,7 @@ var CookieStore = function () {
 
       // 转换为 Cookie 对象
       return cookies.map(function (item) {
-        if (!item.domain) item.domain = domain;
+        item.domain = util.normalizeDomain(item.domain) || domain;
         return new Cookie(item);
       });
     }

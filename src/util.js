@@ -16,6 +16,15 @@ class Util {
 
     return [domain].concat(scopes)
   }
+
+  /**
+   * 根据最新的 RFC 6265 标准化域名作用域
+   * @param  {String} domain 域名
+   * @return {String}        标准化后的域名
+   */
+  normalizeDomain (domain = '') {
+    return domain.replace(/^(\.*)?(?=\S)/ig, '.')
+  }
 }
 
 export default new Util()

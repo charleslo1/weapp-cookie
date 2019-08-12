@@ -102,6 +102,8 @@ class CookieStore {
       // 删除指定域名的 cookie
       let cookies = this.__cookiesMap.get(domain)
       cookies && cookies.delete(name)
+      cookies = this.__cookiesMap.get(util.normalizeDomain(domain))
+      cookies && cookies.delete(name)
     } else {
       // 删除所有域名的 cookie
       for (let cookies of this.__cookiesMap.values()) {
@@ -268,7 +270,7 @@ class CookieStore {
 
     // 转换为 Cookie 对象
     return cookies.map((item) => {
-      if (!item.domain) item.domain = domain
+      item.domain = util.normalizeDomain(item.domain) || domain
       return new Cookie(item)
     })
   }

@@ -18,18 +18,18 @@ describe('weapp-cookies.js', () => {
 
   it('cookies.setResponseCookies(setCookieStr, domain)', () => {
     let result = cookies.setResponseCookies(setCookieStr, 'baidu.com')
-    assert.equal(true, result.get('baidu.com').has('EGG_SESSION'))
+    assert.equal(true, result.get('.baidu.com').has('EGG_SESSION'))
   })
 
   it('cookies.getRequestCookies(domain)', () => {
     cookies.setResponseCookies(setCookieStr, 'baidu.com')
     let result = cookies.getRequestCookies('baidu.com')
-    let value = 'EGG_SESSION=cQgFSy2NnOAAqWu7YUVVEoFWkf2YxXL1pi4GYPBl9ieUPI_YSy6LBvs7lsxB52cZ; dwf_sg_task_completion=False; PSINO=7'
+    let value = 'EGG_SESSION=cQgFSy2NnOAAqWu7YUVVEoFWkf2YxXL1pi4GYPBl9ieUPI_YSy6LBvs7lsxB52cZ; PSINO=7; dwf_sg_task_completion=False'
     assert.equal(value, result)
   })
 
   it('cookies.set(name, value, options)', () => {
-    let result = cookies.set('session_id', 'session_id_value', { domain: '.baidu.com' })
+    let result = cookies.set('session_id', 'session_id_value', { domain: 'baidu.com' })
     assert.equal('session_id_value', result.value)
   })
 

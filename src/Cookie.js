@@ -96,7 +96,7 @@ class Cookie {
    * 重写对象的 toString 方法
    */
   toString () {
-    return [this.name, encodeURIComponent(this.value)].join('=')
+    return [this.name, this.value].join('=')
   }
 }
 
