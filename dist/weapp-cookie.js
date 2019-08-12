@@ -1418,7 +1418,15 @@ function parse(input, options) {
     return [];
   }
   if (input.headers) {
-    input = input.headers["set-cookie"];
+    input =
+      // fast-path for node.js (which automatically normalizes header names to lower-case
+      input.headers["set-cookie"] ||
+      // slow-path for other environments - see #25
+      input.headers[
+        Object.keys(input.headers).find(function(key) {
+          return key.toLowerCase() === "set-cookie";
+        })
+      ];
   }
   if (!Array.isArray(input)) {
     input = [input];

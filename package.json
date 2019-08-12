@@ -26,7 +26,7 @@
   "author": "Charles Lo",
   "license": "ISC",
   "dependencies": {
-    "set-cookie-parser": "^2.3.5"
+    "set-cookie-parser": "^2.3.8"
   },
   "devDependencies": {
     "babel-plugin-external-helpers": "^6.22.0",
@@ -37,7 +37,7 @@
     "babel-register": "^6.26.0",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-html": "^3.2.0",
-    "eslint-plugin-import": "^2.17.3",
+    "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-node": "^5.1.1",
     "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-standard": "^3.1.0",
