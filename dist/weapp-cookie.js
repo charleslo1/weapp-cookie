@@ -1627,7 +1627,7 @@ var Cookie = function () {
     value: function set() {
       var setCookieStr = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
 
-      var cookie = setCookie.parse(setCookieStr)[0];
+      var cookie = setCookie.parse(setCookieStr, { decodeValues: false })[0];
       if (cookie) {
         _Object$assign(this, cookie);
         // 更新设置时间
@@ -2170,7 +2170,7 @@ var CookieStore = function () {
       var domain = arguments[1];
 
       // parse
-      var cookies = setCookie.parse(setCookie.splitCookiesString(setCookieStr));
+      var cookies = setCookie.parse(setCookie.splitCookiesString(setCookieStr), { decodeValues: false });
 
       // 转换为 Cookie 对象
       return cookies.map(function (item) {

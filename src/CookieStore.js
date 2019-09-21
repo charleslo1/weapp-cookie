@@ -266,7 +266,7 @@ class CookieStore {
    */
   parse (setCookieStr = '', domain) {
     // parse
-    var cookies = cookieParser.parse(cookieParser.splitCookiesString(setCookieStr))
+    var cookies = cookieParser.parse(cookieParser.splitCookiesString(setCookieStr), { decodeValues: false })
 
     // 转换为 Cookie 对象
     return cookies.map((item) => {
