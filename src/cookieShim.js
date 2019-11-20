@@ -25,7 +25,7 @@ const cookieStore = (function () {
       let requestCookies = cookieStore.getRequestCookies(domain, path)
 
       // 请求时带上设置的 cookies
-      options.header = options.header || {}
+      options.header = options.headers = options.header || options.headers || {}
       options.header['Cookie'] = requestCookies
       options.header['X-Requested-With'] = 'XMLHttpRequest'
       if (options.dataType === 'json') {
@@ -35,6 +35,7 @@ const cookieStore = (function () {
       // 请求成功回调
       let successCallback = options.success
       options.success = function (response) {
+        response.header = response.header || response.headers
         // 获取响应 cookies
         let responseCookies = response.header ? response.header['Set-Cookie'] || response.header['set-cookie'] : ''
         // 设置 cookies，以便下次请求带上

@@ -1,7 +1,7 @@
 import Cookie from './Cookie'
 import cookieParser from 'set-cookie-parser'
 import util from './util'
-import api from './api'
+import localStorage from './localStorage'
 
 /**
  * CookieStore 类
@@ -305,7 +305,7 @@ class CookieStore {
       }
 
       // 保存到本地存储
-      api.setStorageSync(this.__storageKey, saveCookies)
+      localStorage.setItem(this.__storageKey, saveCookies)
     } catch (err) {
       console.warn('Cookie 存储异常：', err)
     }
@@ -317,7 +317,7 @@ class CookieStore {
   __readFromStorage () {
     try {
       // 从本地存储读取 cookie 数据数组
-      let cookies = api.getStorageSync(this.__storageKey) || []
+      let cookies = localStorage.getItem(this.__storageKey) || []
 
       // 转化为 Cookie 对象数组
       cookies = cookies.map((item) => new Cookie(item))

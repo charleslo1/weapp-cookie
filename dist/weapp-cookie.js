@@ -1726,7 +1726,77 @@ var Cookie = function () {
 /**
  * 适配小程序API宿主对象
  */
-var api = wx || window.wx || window.tt || window.my || window.swan;
+
+function getApi() {
+  if (typeof my !== 'undefined') {
+    my.platform = 'my';
+    return my;
+  } else if (typeof tt !== 'undefined') {
+    tt.platform = 'tt';
+    return tt;
+  } else if (typeof swan !== 'undefined') {
+    swan.platform = 'swan';
+    return swan;
+  } else if (typeof qq !== 'undefined') {
+    qq.platform = 'qq';
+    return qq;
+  } else if (typeof wx !== 'undefined') {
+    wx.platform = 'wx';
+    return wx;
+  }
+  return { platform: 'none' };
+}
+
+var api = getApi();
+
+/**
+ * LocalStorage 类
+ */
+
+var LocalStorage = function () {
+  function LocalStorage() {
+    _classCallCheck(this, LocalStorage);
+  }
+
+  _createClass(LocalStorage, [{
+    key: 'getItem',
+
+    /**
+     * 获取数据项
+     * @param {String} key   键
+     */
+    value: function getItem(key) {
+      // 屏蔽支付宝小程序语法差异
+      if (api.platform === 'my') {
+        return api.getStorageSync({ key: key }).data;
+      }
+      return api.getStorageSync(key);
+    }
+
+    /**
+     * 设置数据项
+     * @param {String} key   键
+     * @param {Any} value 值
+     */
+
+  }, {
+    key: 'setItem',
+    value: function setItem(key, value) {
+      // 屏蔽支付宝小程序语法差异
+      if (api.platform === 'my') {
+        return api.setStorageSync({ key: key, data: value });
+      }
+      return api.setStorageSync(key, value);
+    }
+  }]);
+
+  return LocalStorage;
+}();
+
+// 单例
+
+
+var localStorage = new LocalStorage(api);
 
 /**
  * CookieStore 类
@@ -2259,7 +2329,7 @@ var CookieStore = function () {
           }
         }
 
-        api.setStorageSync(this.__storageKey, saveCookies);
+        localStorage.setItem(this.__storageKey, saveCookies);
       } catch (err) {
         console.warn('Cookie 存储异常：', err);
       }
@@ -2274,7 +2344,7 @@ var CookieStore = function () {
     value: function __readFromStorage() {
       try {
         // 从本地存储读取 cookie 数据数组
-        var cookies = api.getStorageSync(this.__storageKey) || [];
+        var cookies = localStorage.getItem(this.__storageKey) || [];
 
         // 转化为 Cookie 对象数组
         cookies = cookies.map(function (item) {
@@ -2316,7 +2386,7 @@ var cookieStore = function () {
       var requestCookies = cookieStore.getRequestCookies(domain, path);
 
       // 请求时带上设置的 cookies
-      options.header = options.header || {};
+      options.header = options.headers = options.header || options.headers || {};
       options.header['Cookie'] = requestCookies;
       options.header['X-Requested-With'] = 'XMLHttpRequest';
       if (options.dataType === 'json') {
@@ -2326,6 +2396,7 @@ var cookieStore = function () {
       // 请求成功回调
       var successCallback = options.success;
       options.success = function (response) {
+        response.header = response.header || response.headers;
         // 获取响应 cookies
         var responseCookies = response.header ? response.header['Set-Cookie'] || response.header['set-cookie'] : '';
         // 设置 cookies，以便下次请求带上
