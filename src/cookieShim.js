@@ -15,8 +15,16 @@ const cookieStore = (function () {
   function cookieRequestProxy (options) {
     // 是否启用 cookie（默认 true）
     options.cookie = options.cookie === undefined || !!options.cookie
+    // 数据类型
     options.dataType = options.dataType || 'json'
-    if (options.cookie) {
+    options.header = options.headers = options.header || options.headers || {}
+    options.header['X-Requested-With'] = 'XMLHttpRequest'
+    if (options.dataType === 'json') {
+      options.header['Accept'] = 'application/json, text/plain, */*'
+    }
+
+    // 判断在小程序环境是否启用 cookie
+    if (api.platform !== 'h5' && options.cookie) {
       // 域名
       let domain = (options.url || '').split('/')[2]
       let path = options.url.split(domain).pop()
@@ -25,12 +33,7 @@ const cookieStore = (function () {
       let requestCookies = cookieStore.getRequestCookies(domain, path)
 
       // 请求时带上设置的 cookies
-      options.header = options.headers = options.header || options.headers || {}
       options.header['Cookie'] = requestCookies
-      options.header['X-Requested-With'] = 'XMLHttpRequest'
-      if (options.dataType === 'json') {
-        options.header['Accept'] = 'application/json, text/plain, */*'
-      }
 
       // 请求成功回调
       let successCallback = options.success

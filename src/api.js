@@ -16,7 +16,7 @@ function getApi () {
     qq.platform = 'qq'
     return qq
   } else if (typeof wx !== 'undefined') {
-    wx.platform = 'wx'
+    wx.platform = typeof window !== 'undefined' && typeof location !== 'undefined' ? 'h5' : 'wx'
     return wx
   }
   return { platform: 'none' }
