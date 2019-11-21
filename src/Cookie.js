@@ -25,7 +25,7 @@ class Cookie {
    * 设置 cookie, 将 set-cookie 字符串转换为 Cookie 对象
    */
   set (setCookieStr = '') {
-    var cookie = cookieParser.parse(setCookieStr)[0]
+    var cookie = cookieParser.parse(setCookieStr, { decodeValues: false })[0]
     if (cookie) {
       Object.assign(this, cookie)
       // 更新设置时间
@@ -96,7 +96,7 @@ class Cookie {
    * 重写对象的 toString 方法
    */
   toString () {
-    return [this.name, encodeURIComponent(this.value)].join('=')
+    return [this.name, this.value].join('=')
   }
 }
 

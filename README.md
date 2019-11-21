@@ -1,5 +1,5 @@
 # weapp-cookie
-> 一行代码让微信、头条、百度、支付宝小程序支持 cookie
+> 一行代码让微信、头条、百度、支付宝小程序支持 cookie，兼容 uni-app
 
 ![weapp-cookie](./assets/weapp-cookie.png)
 
@@ -16,7 +16,7 @@
 ``` sh
 npm install weapp-cookie --save
 
-# 将 npm 包复制到 vendor 文件夹，避免小程序可能不能找到文件（tips：使用 wepy/mpvue 等框架无需此步）
+# 将 npm 包复制到 vendor 文件夹，避免小程序可能不能找到文件（Tips：支持npm包的开发环境无需此步）
 cp -rf ./node_modules/ ./vendor/
 ```
 
@@ -27,7 +27,7 @@ cp -rf ./node_modules/ ./vendor/
 // app.js
 import './vendor/weapp-cookie/dist/weapp-cookie'
 
-// tips: 使用 wepy/mpvue 可以直接在入口 js 引入 weapp-cookie 模块
+// tips: 使用 uni-app/wepy/mpvue 等支持npm包的环境可以直接在入口 js 引入 weapp-cookie 模块
 // import 'weapp-cookie'
 
 App({

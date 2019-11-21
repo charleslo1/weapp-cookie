@@ -1,7 +1,7 @@
 import Cookie from './Cookie'
 import cookieParser from 'set-cookie-parser'
 import util from './util'
-import api from './api'
+import localStorage from './localStorage'
 
 /**
  * CookieStore 类
@@ -101,6 +101,8 @@ class CookieStore {
     if (domain) {
       // 删除指定域名的 cookie
       let cookies = this.__cookiesMap.get(domain)
+      cookies && cookies.delete(name)
+      cookies = this.__cookiesMap.get(util.normalizeDomain(domain))
       cookies && cookies.delete(name)
     } else {
       // 删除所有域名的 cookie
@@ -264,11 +266,11 @@ class CookieStore {
    */
   parse (setCookieStr = '', domain) {
     // parse
-    var cookies = cookieParser.parse(cookieParser.splitCookiesString(setCookieStr))
+    var cookies = cookieParser.parse(cookieParser.splitCookiesString(setCookieStr), { decodeValues: false })
 
     // 转换为 Cookie 对象
     return cookies.map((item) => {
-      if (!item.domain) item.domain = domain
+      item.domain = util.normalizeDomain(item.domain) || domain
       return new Cookie(item)
     })
   }
@@ -303,7 +305,7 @@ class CookieStore {
       }
 
       // 保存到本地存储
-      api.setStorageSync(this.__storageKey, saveCookies)
+      localStorage.setItem(this.__storageKey, saveCookies)
     } catch (err) {
       console.warn('Cookie 存储异常：', err)
     }
@@ -315,7 +317,7 @@ class CookieStore {
   __readFromStorage () {
     try {
       // 从本地存储读取 cookie 数据数组
-      let cookies = api.getStorageSync(this.__storageKey) || []
+      let cookies = localStorage.getItem(this.__storageKey) || []
 
       // 转化为 Cookie 对象数组
       cookies = cookies.map((item) => new Cookie(item))

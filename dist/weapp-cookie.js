@@ -1418,7 +1418,15 @@ function parse(input, options) {
     return [];
   }
   if (input.headers) {
-    input = input.headers["set-cookie"];
+    input =
+      // fast-path for node.js (which automatically normalizes header names to lower-case
+      input.headers["set-cookie"] ||
+      // slow-path for other environments - see #25
+      input.headers[
+        Object.keys(input.headers).find(function(key) {
+          return key.toLowerCase() === "set-cookie";
+        })
+      ];
   }
   if (!Array.isArray(input)) {
     input = [input];
@@ -1565,6 +1573,20 @@ var Util = function () {
 
       return [domain].concat(scopes);
     }
+
+    /**
+     * 根据最新的 RFC 6265 标准化域名作用域
+     * @param  {String} domain 域名
+     * @return {String}        标准化后的域名
+     */
+
+  }, {
+    key: 'normalizeDomain',
+    value: function normalizeDomain() {
+      var domain = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+
+      return domain.replace(/^(\.*)?(?=\S)/ig, '.');
+    }
   }]);
 
   return Util;
@@ -1605,7 +1627,7 @@ var Cookie = function () {
     value: function set() {
       var setCookieStr = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
 
-      var cookie = setCookie.parse(setCookieStr)[0];
+      var cookie = setCookie.parse(setCookieStr, { decodeValues: false })[0];
       if (cookie) {
         _Object$assign(this, cookie);
         // 更新设置时间
@@ -1694,7 +1716,7 @@ var Cookie = function () {
   }, {
     key: 'toString',
     value: function toString() {
-      return [this.name, encodeURIComponent(this.value)].join('=');
+      return [this.name, this.value].join('=');
     }
   }]);
 
@@ -1704,7 +1726,77 @@ var Cookie = function () {
 /**
  * 适配小程序API宿主对象
  */
-var api = wx || window.wx || window.tt || window.my || window.swan;
+
+function getApi() {
+  if (typeof my !== 'undefined') {
+    my.platform = 'my';
+    return my;
+  } else if (typeof tt !== 'undefined') {
+    tt.platform = 'tt';
+    return tt;
+  } else if (typeof swan !== 'undefined') {
+    swan.platform = 'swan';
+    return swan;
+  } else if (typeof qq !== 'undefined') {
+    qq.platform = 'qq';
+    return qq;
+  } else if (typeof wx !== 'undefined') {
+    wx.platform = typeof window !== 'undefined' && typeof location !== 'undefined' ? 'h5' : 'wx';
+    return wx;
+  }
+  return { platform: 'none' };
+}
+
+var api = getApi();
+
+/**
+ * LocalStorage 类
+ */
+
+var LocalStorage = function () {
+  function LocalStorage() {
+    _classCallCheck(this, LocalStorage);
+  }
+
+  _createClass(LocalStorage, [{
+    key: 'getItem',
+
+    /**
+     * 获取数据项
+     * @param {String} key   键
+     */
+    value: function getItem(key) {
+      // 屏蔽支付宝小程序语法差异
+      if (api.platform === 'my') {
+        return api.getStorageSync({ key: key }).data;
+      }
+      return api.getStorageSync(key);
+    }
+
+    /**
+     * 设置数据项
+     * @param {String} key   键
+     * @param {Any} value 值
+     */
+
+  }, {
+    key: 'setItem',
+    value: function setItem(key, value) {
+      // 屏蔽支付宝小程序语法差异
+      if (api.platform === 'my') {
+        return api.setStorageSync({ key: key, data: value });
+      }
+      return api.setStorageSync(key, value);
+    }
+  }]);
+
+  return LocalStorage;
+}();
+
+// 单例
+
+
+var localStorage = new LocalStorage(api);
 
 /**
  * CookieStore 类
@@ -1855,6 +1947,8 @@ var CookieStore = function () {
       if (domain) {
         // 删除指定域名的 cookie
         var cookies = this.__cookiesMap.get(domain);
+        cookies && cookies.delete(name);
+        cookies = this.__cookiesMap.get(util.normalizeDomain(domain));
         cookies && cookies.delete(name);
       } else {
         // 删除所有域名的 cookie
@@ -2146,11 +2240,11 @@ var CookieStore = function () {
       var domain = arguments[1];
 
       // parse
-      var cookies = setCookie.parse(setCookie.splitCookiesString(setCookieStr));
+      var cookies = setCookie.parse(setCookie.splitCookiesString(setCookieStr), { decodeValues: false });
 
       // 转换为 Cookie 对象
       return cookies.map(function (item) {
-        if (!item.domain) item.domain = domain;
+        item.domain = util.normalizeDomain(item.domain) || domain;
         return new Cookie(item);
       });
     }
@@ -2235,7 +2329,7 @@ var CookieStore = function () {
           }
         }
 
-        api.setStorageSync(this.__storageKey, saveCookies);
+        localStorage.setItem(this.__storageKey, saveCookies);
       } catch (err) {
         console.warn('Cookie 存储异常：', err);
       }
@@ -2250,7 +2344,7 @@ var CookieStore = function () {
     value: function __readFromStorage() {
       try {
         // 从本地存储读取 cookie 数据数组
-        var cookies = api.getStorageSync(this.__storageKey) || [];
+        var cookies = localStorage.getItem(this.__storageKey) || [];
 
         // 转化为 Cookie 对象数组
         cookies = cookies.map(function (item) {
@@ -2282,8 +2376,16 @@ var cookieStore = function () {
   function cookieRequestProxy(options) {
     // 是否启用 cookie（默认 true）
     options.cookie = options.cookie === undefined || !!options.cookie;
+    // 数据类型
     options.dataType = options.dataType || 'json';
-    if (options.cookie) {
+    options.header = options.headers = options.header || options.headers || {};
+    options.header['X-Requested-With'] = 'XMLHttpRequest';
+    if (options.dataType === 'json') {
+      options.header['Accept'] = 'application/json, text/plain, */*';
+    }
+
+    // 判断在小程序环境是否启用 cookie
+    if (api.platform !== 'h5' && options.cookie) {
       // 域名
       var domain = (options.url || '').split('/')[2];
       var path = options.url.split(domain).pop();
@@ -2292,16 +2394,12 @@ var cookieStore = function () {
       var requestCookies = cookieStore.getRequestCookies(domain, path);
 
       // 请求时带上设置的 cookies
-      options.header = options.header || {};
       options.header['Cookie'] = requestCookies;
-      options.header['X-Requested-With'] = 'XMLHttpRequest';
-      if (options.dataType === 'json') {
-        options.header['Accept'] = 'application/json, text/plain, */*';
-      }
 
       // 请求成功回调
       var successCallback = options.success;
       options.success = function (response) {
+        response.header = response.header || response.headers;
         // 获取响应 cookies
         var responseCookies = response.header ? response.header['Set-Cookie'] || response.header['set-cookie'] : '';
         // 设置 cookies，以便下次请求带上
