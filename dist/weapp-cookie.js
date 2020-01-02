@@ -2402,8 +2402,12 @@ var cookieStore = function () {
         response.header = response.header || response.headers;
         // 获取响应 cookies
         var responseCookies = response.header ? response.header['Set-Cookie'] || response.header['set-cookie'] : '';
-        // 设置 cookies，以便下次请求带上
-        if (responseCookies) cookieStore.setResponseCookies(responseCookies, domain);
+        if (responseCookies) {
+          // 处理QQ小程序下cookie分隔符问题：https://github.com/charleslo1/weapp-cookie/issues/39
+          responseCookies = responseCookies.replace(/\;([^\s\;]*?(?=\=))/ig, ',$1');
+          // 设置 cookies，以便下次请求带上
+          cookieStore.setResponseCookies(responseCookies, domain);
+        }
         // 调用成功回调函数
         successCallback && successCallback(response);
       };
@@ -2419,27 +2423,34 @@ var cookieStore = function () {
   var downloadFileProxy = cookieRequestProxy.bind(api.downloadFile);
 
   try {
-    // 使用 requestProxy 覆盖微信原生 request、uploadFile
+    // 增加 requestWithCookie、uploadFileWithCookie、downloadFileWithCookie 接口
+    _Object$defineProperties(api, {
+      // request
+      requestWithCookie: {
+        value: requestProxy
+      },
+      // uploadFile
+      uploadFileWithCookie: {
+        value: uploadFileProxy
+      },
+      // downloadFile
+      downloadFileWithCookie: {
+        value: downloadFileProxy
+      }
+    });
+
+    // 使用 requestProxy 覆盖微信原生 request、uploadFile、downloadFile 接口
     _Object$defineProperties(api, {
       // request
       request: {
-        value: requestProxy
-      },
-      requestWithCookie: {
         value: requestProxy
       },
       // uploadFile
       uploadFile: {
         value: uploadFileProxy
       },
-      uploadFileWithCookie: {
-        value: uploadFileProxy
-      },
       // downloadFile
       downloadFile: {
-        value: downloadFileProxy
-      },
-      downloadFileWithCookie: {
         value: downloadFileProxy
       }
     });
