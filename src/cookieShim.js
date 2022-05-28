@@ -30,25 +30,41 @@ const cookieStore = (function () {
       let path = options.url.split(domain).pop()
 
       // 获取请求 cookies
-      let requestCookies = cookieStore.getRequestCookies(domain, path)
-
       // 请求时带上设置的 cookies
-      options.header['Cookie'] = requestCookies
+      options.header['Cookie'] = cookieStore.getRequestCookies(domain, path)
 
-      // 请求成功回调
-      let successCallback = options.success
-      options.success = function (response) {
+      function handleCookies(response){
         response.header = response.header || response.headers
         // 获取响应 cookies
         let responseCookies = response.header ? response.header['Set-Cookie'] || response.header['set-cookie'] : ''
         if (responseCookies) {
           // 处理QQ小程序下cookie分隔符问题：https://github.com/charleslo1/weapp-cookie/issues/39
-          responseCookies = responseCookies.replace(/\;([^\s\;]*?(?=\=))/ig, ',$1')
+          responseCookies = responseCookies.replace(/;((?!Expires|Max-Age|Domain|Path|SameSite)[^\s;]*?)=/gi, ',$1')
+
+          // 处理uniapp下header头中cookie加方括号问题
+          // [JSESSIONID=A9118060632F0DA9A0B967ADC35DF903; Path=/; HttpOnly, route=38ac858752aa1b02deb40f6abc4d204f;Path=/]
+          if(typeof uni !== "undefined") responseCookies = responseCookies.substring(1, responseCookies.length-1);
+
           // 设置 cookies，以便下次请求带上
           cookieStore.setResponseCookies(responseCookies, domain)
         }
+      }
+      // 请求成功回调
+      let successCallback = options.success
+      options.success = function (response) {
+        handleCookies(response)
         // 调用成功回调函数
         successCallback && successCallback(response)
+      }
+
+      // 适配uniapp中luch-request插件，这个插件只是使用了complete回调，并没有success回调
+      if (successCallback === undefined && typeof uni !== "undefined") {
+        let completeCallback = options.complete;
+        options.complete = function(response) {
+          handleCookies(response)
+          // 调用成功回调函数
+          completeCallback && completeCallback(response);
+        };
       }
     }
 
@@ -66,15 +82,18 @@ const cookieStore = (function () {
     Object.defineProperties(api, {
       // request
       requestWithCookie: {
-        value: requestProxy
+        value: requestProxy,
+        configurable: true,
       },
       // uploadFile
       uploadFileWithCookie: {
-        value: uploadFileProxy
+        value: uploadFileProxy,
+        configurable: true,
       },
       // downloadFile
       downloadFileWithCookie: {
-        value: downloadFileProxy
+        value: downloadFileProxy,
+        configurable: true,
       }
     })
 
@@ -82,15 +101,18 @@ const cookieStore = (function () {
     Object.defineProperties(api, {
       // request
       request: {
-        value: requestProxy
+        value: requestProxy,
+        configurable: true,
       },
       // uploadFile
       uploadFile: {
-        value: uploadFileProxy
+        value: uploadFileProxy,
+        configurable: true,
       },
       // downloadFile
       downloadFile: {
-        value: downloadFileProxy
+        value: downloadFileProxy,
+        configurable: true,
       }
     })
   } catch (err) {
