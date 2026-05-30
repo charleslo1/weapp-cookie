@@ -42,6 +42,10 @@ const cookieStore = (function () {
         // 获取响应 cookies
         let responseCookies = response.header ? response.header['Set-Cookie'] || response.header['set-cookie'] : ''
         if (responseCookies) {
+          // 针对IOS设备，可能获取的响应 cookies是数组，需要处理为字符串
+          if (Array.isArray(responseCookies)) {
+            responseCookies = responseCookies[0] || ''
+          }
           // 处理QQ小程序下cookie分隔符问题：https://github.com/charleslo1/weapp-cookie/issues/39
           // 兼容在ios设备下获取到的set-cookie为数组情况
           responseCookies = responseCookies.toString().replace(/\;([^\s\;]*?(?=\=))/ig, ',$1')
