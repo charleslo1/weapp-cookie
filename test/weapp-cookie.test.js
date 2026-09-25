@@ -127,6 +127,15 @@ describe('response with multiple set-cookie', () => {
     assert.deepEqual(result.map(cookie => cookie.name), ['JSESSIONID', 'route'])
   })
 
+  it('cookies.parse(setCookieStr) 兼容属性无值且紧跟逗号分隔的多个 cookie', () => {
+    // https://github.com/charleslo1/weapp-cookie/issues/39 中反馈的真实 header
+    let result = cookies.parse('JSESSIONID=A9118060632F0DA9A0B967ADC35DF903;Path=/;HttpOnly,route=38ac858752aa1b02deb40f6abc4d204f;Path=/', 'example.com')
+    assert.deepEqual(result.map(cookie => cookie.name), ['JSESSIONID', 'route'])
+    assert.equal('/', result[0].path)
+    assert.equal(true, result[0].httpOnly)
+    assert.equal('/', result[1].path)
+  })
+
   it('wx.request 收到数组形式的 Set-Cookie 时可以正常解析并保存', (done) => {
     global.wxRequestHandler = (options) => {
       options.success({

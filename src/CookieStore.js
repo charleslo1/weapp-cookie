@@ -281,7 +281,8 @@ class CookieStore {
       if (typeof cookieStr !== 'string' || !cookieStr) continue
       // 处理 QQ 小程序下 cookie 分隔符问题：https://github.com/charleslo1/weapp-cookie/issues/39
       // 「;」为分隔符时其后紧跟的是新的 cookie 名，而属性（Path、Expires、Max-Age 等）不能算作新 cookie
-      cookieStr = cookieStr.replace(/;([^\s;=]+)(?==)/g, (separator, name) => {
+      // 注意：匹配不能跨越逗号，否则会把「;HttpOnly,route=x」这样已经用逗号分隔的相邻 cookie 粘在一起
+      cookieStr = cookieStr.replace(/;([^\s;,=]+)(?==)/g, (separator, name) => {
         return COOKIE_ATTRIBUTES.test(name) ? separator : `,${name}`
       })
       cookies = cookies.concat(cookieParser.splitCookiesString(cookieStr))
