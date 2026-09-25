@@ -172,6 +172,30 @@ const token: string | undefined = cookies.get('csrf_token', 'example.com')
 cookies.set('uid', '100', { domain: 'example.com', maxAge: 3600 })
 ```
 
+# Cookie 作用域
+
+cookie 的作用域规则与浏览器保持一致：**只支持当前域名与父子域名之间共享 cookie**，不相关的域名之间不会传递 cookie（例如 `a.com` 的 cookie 不会发送给 `b.com`，详见 [#46](https://github.com/charleslo1/weapp-cookie/issues/46)）
+
+作用域范围列表为当前域名及其各级父域名，例如 `www.example.com` 的作用域范围是 `www.example.com`、`.www.example.com`、`.example.com`、`.com`，所以：
+
+- 请求 `www.example.com` 时，会带上存储在 `www.example.com`、`.www.example.com`、`.example.com` 下的 cookie
+- 请求 `b.example.com` 时，会带上存储在 `.example.com` 下的 cookie，但不会带上只属于 `www.example.com` 的 cookie
+- 请求 `www.b.com` 时，不会带上 `.example.com` 的 cookie
+
+**端口号不参与作用域**：端口号不属于域名的一部分，`https://example.com:2443` 与 `https://example.com:8080` 共享同一份 cookie，`www.example.com:2443` 也能带上 `.example.com` 的 cookie
+
+如需关闭某次请求的 cookie 处理（请求不带 cookie，响应中的 cookie 也不保存），在请求参数中传入 `cookie: false` 即可：
+
+``` js
+wx.request({
+    url: 'https://example.com/api',
+    cookie: false, // 本次请求不处理 cookie
+    success: function (res) {
+        console.log(res)
+    }
+})
+```
+
 # Api
 
 ## CookieStore

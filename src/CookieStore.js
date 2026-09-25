@@ -71,7 +71,8 @@ class CookieStore {
    */
   set (name = '', value = '', options = {}) {
     // 构建 Cookie 实例
-    let domain = options.domain
+    // 端口号不属于域名的一部分，需要剥离，否则会存储到无法被正常匹配的域名下
+    let domain = util.stripPort(options.domain)
     if (!domain || !name) throw new Error('name 和 options.domain 值不正确！')
 
     let cookie = new Cookie(Object.assign(options, {
@@ -112,11 +113,12 @@ class CookieStore {
    */
   remove (name = '', domain = '') {
     if (domain) {
-      // 删除指定域名的 cookie
-      let cookies = this.__cookiesMap.get(domain)
-      cookies && cookies.delete(name)
-      cookies = this.__cookiesMap.get(util.normalizeDomain(domain))
-      cookies && cookies.delete(name)
+      // 删除指定域名的 cookie（同时兼容未剥离端口号的历史存储）
+      let scopeDomains = [domain, util.stripPort(domain), util.normalizeDomain(domain)]
+      scopeDomains.forEach((key) => {
+        let cookies = this.__cookiesMap.get(key)
+        cookies && cookies.delete(name)
+      })
     } else {
       // 删除所有域名的 cookie
       for (let cookies of this.__cookiesMap.values()) {
@@ -342,7 +344,8 @@ class CookieStore {
 
     // 转换为 Cookie 对象
     return cookies.map((item) => {
-      item.domain = util.normalizeDomain(item.domain) || domain
+      // 未设置 domain 时使用请求域名，同样需要剥离端口号
+      item.domain = util.normalizeDomain(item.domain) || util.stripPort(domain)
       return new Cookie(item)
     })
   }

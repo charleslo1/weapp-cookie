@@ -37,7 +37,7 @@ npx -y -p typescript@5 tsc --noEmit --strict --target es2015 --moduleResolution 
 | #69 / #54 / #53 | iOS 上 `Set-Cookie` 为数组 / 一个响应多个 `Set-Cookie` | `test/weapp-cookie.test.js` → `response with multiple set-cookie` |
 | #70 | `Expires` 为 RFC 1123 时不触发 `new Date` 警告 | `test/host-env.test.js` → `#70 ...`，`weapp-cookies.js Expires 解析` |
 | #56 | `Max-Age:0` / 负数立即过期 | `test/weapp-cookie.test.js` → `set-cookie Max-Age:0` |
-| #43 | 域名带端口号时的作用域与域名标准化 | `test/weapp-cookie.test.js` → `cookies.parse` / `clearCookies` 相关用例 |
+| #43 | 域名带端口号时的作用域与域名标准化 | `test/util.test.js` + `test/weapp-cookie.test.js` → `域名带端口号` / `wx.request 代理` |
 | #34 | 插件环境不允许覆盖宿主方法 | `test/host-env.test.js` → `#34 ...`（`test/fixtures/plugin-host.js`） |
 | #58 | 宿主对象晚于本库出现 | `test/host-env.test.js` → `#58 ...`（`test/fixtures/late-host.js`） |
 | #62 | 支付宝小程序 `enableCookie` | `test/host-env.test.js` → `#62 ...`（`test/fixtures/alipay-enable-cookie.js`） |
