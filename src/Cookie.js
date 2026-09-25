@@ -1,5 +1,6 @@
 import cookieParser from 'set-cookie-parser'
 import util from './util'
+import time from './time'
 
 /**
  * Cookie 类
@@ -18,7 +19,7 @@ class Cookie {
     this.maxAge = props.maxAge !== undefined && props.maxAge !== null ? parseInt(props.maxAge) : null
     this.httpOnly = !!props.httpOnly
     // 记录时间
-    this.dateTime = props.dateTime ? new Date(props.dateTime) : new Date()
+    this.dateTime = props.dateTime ? new Date(props.dateTime) : time.now()
   }
 
   /**
@@ -29,7 +30,7 @@ class Cookie {
     if (cookie) {
       Object.assign(this, cookie)
       // 更新设置时间
-      this.dateTime = new Date()
+      this.dateTime = time.now()
     }
 
     return this
@@ -55,11 +56,11 @@ class Cookie {
     }
     // 存活秒数超出 maxAge，无效
     if (this.maxAge > 0) {
-      let seconds = (Date.now() - this.dateTime.getTime()) / 1000
+      let seconds = (time.getTime() - this.dateTime.getTime()) / 1000
       return seconds > this.maxAge
     }
     // expires 小于当前时间，无效
-    if (this.expires && this.expires < new Date()) {
+    if (this.expires && this.expires < time.now()) {
       return true
     }
     return false

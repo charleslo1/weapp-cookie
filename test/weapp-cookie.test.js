@@ -209,3 +209,122 @@ describe('weapp-cookies.js set-cookie Max-Age:0', () => {
     assert.equal(true, cookies.has('session', DOMAIN))
   })
 })
+
+// 回归：https://github.com/charleslo1/weapp-cookie/issues/70
+// set-cookie 的 Expires 是 RFC 1123 格式，部分 iOS 真机与 uni-app 用它构造 new Date
+// 会打印「new Date 在部分 iOS 下无法正常使用」并刷屏，所以先归一化成 ISO 8601。
+describe('weapp-cookies.js Expires 解析', () => {
+  it('__normalizeExpires 把 RFC 1123 归一化成 ISO 8601', () => {
+    assert.equal(
+      'a=1; Expires=2025-12-01T09:48:36+00:00; Path=/',
+      cookies.__normalizeExpires('a=1; Expires=Mon, 01 Dec 2025 09:48:36 GMT; Path=/')
+    )
+    // 带短横线的写法
+    assert.equal(
+      'a=1; expires=2099-08-25T04:04:04+00:00',
+      cookies.__normalizeExpires('a=1; expires=Sat, 25-Aug-2099 04:04:04 GMT')
+    )
+    // 两位年份
+    assert.equal(
+      'a=1; Expires=1994-11-06T08:49:37+00:00',
+      cookies.__normalizeExpires('a=1; Expires=Sun, 06-Nov-94 08:49:37 GMT')
+    )
+    // 带时区偏移
+    assert.equal(
+      'a=1; Expires=2025-12-01T01:48:36+00:00',
+      cookies.__normalizeExpires('a=1; Expires=Mon, 01 Dec 2025 09:48:36 +0800')
+    )
+  })
+
+  it('已经是 ISO 8601 或无法识别的日期保持原样', () => {
+    assert.equal(
+      'a=1; Expires=2025-12-01T09:48:36+00:00',
+      cookies.__normalizeExpires('a=1; Expires=2025-12-01T09:48:36+00:00')
+    )
+    assert.equal(
+      'a=1; Expires=not-a-date',
+      cookies.__normalizeExpires('a=1; Expires=not-a-date')
+    )
+  })
+
+  it('解析后的过期时间与 RFC 1123 字面含义一致', () => {
+    let cookie = cookies.parse('a=1; path=/; expires=Mon, 01 Dec 2025 09:48:36 GMT', 'expires.example.com')[0]
+    assert.equal(Date.UTC(2025, 11, 1, 9, 48, 36), cookie.expires.getTime())
+  })
+
+  it('一个响应里混合多种格式的 Expires 都能解析且互不影响', () => {
+    let result = cookies.parse(
+      'a=1; expires=Mon, 01 Dec 2025 09:48:36 GMT; path=/, b=2; expires=Sat, 25-Aug-2099 04:04:04 GMT; path=/',
+      'expires.example.com'
+    )
+    assert.deepEqual(result.map(cookie => cookie.name), ['a', 'b'])
+    assert.equal(Date.UTC(2025, 11, 1, 9, 48, 36), result[0].expires.getTime())
+    assert.equal(Date.UTC(2099, 7, 25, 4, 4, 4), result[1].expires.getTime())
+  })
+})
+
+// 回归：https://github.com/charleslo1/weapp-cookie/issues/67
+// 用户把手机时间改到未来后，服务端下发的 cookie 会被误判过期、直接丢弃。
+describe('weapp-cookies.js 时间校准', () => {
+  const DOMAIN = 'calibrate.example.com'
+
+  it('setNowTime 校准后，设备时间偏到未来也不会误判过期', () => {
+    let nativeNow = Date.now
+    let real = nativeNow()
+    try {
+      // 设备时间被用户改到 30 天以后
+      Date.now = () => real + 30 * 86400000
+      // 未校准：5 天后才过期的 cookie 被当成已过期并丢弃
+      cookies.setResponseCookies(
+        'uncalibrated=1; Expires=' + new Date(real + 5 * 86400000).toUTCString() + '; Path=/',
+        DOMAIN
+      )
+      assert.equal(false, cookies.has('uncalibrated', DOMAIN))
+
+      // 校准到真实时间后，同样的 cookie 可以正常保存
+      cookies.setNowTime(real)
+      cookies.setResponseCookies(
+        'calibrated=1; Expires=' + new Date(real + 5 * 86400000).toUTCString() + '; Path=/',
+        DOMAIN
+      )
+      assert.equal(true, cookies.has('calibrated', DOMAIN))
+      assert.equal(true, Math.abs(cookies.now().getTime() - real) < 1000)
+    } finally {
+      Date.now = nativeNow
+      cookies.setNowTime()
+    }
+  })
+
+  it('setNowTime() 缺省时恢复使用设备时间', () => {
+    let before = Date.now()
+    cookies.setNowTime(before + 86400000)
+    assert.equal(true, cookies.now().getTime() - Date.now() > 86000000)
+
+    cookies.setNowTime()
+    assert.equal(true, Math.abs(cookies.now().getTime() - Date.now()) < 1000)
+  })
+
+  it('setNowTime 的时间格式无法解析时给出明确错误', () => {
+    assert.throws(() => cookies.setNowTime('not-a-date'), /setNowTime/)
+    cookies.setNowTime()
+  })
+
+  it('校准时间后 maxAge 仍然按经过的秒数计算', () => {
+    let nativeNow = Date.now
+    let real = nativeNow()
+    try {
+      cookies.setNowTime(real)
+      cookies.setResponseCookies('age=1; Max-Age=3600; Path=/', DOMAIN)
+      let cookie = cookies.getCookie('age', DOMAIN)
+      assert.equal(false, cookie.isExpired())
+
+      // 校准时间往前走 2 小时（设备时间不变）
+      cookies.setNowTime(real + 2 * 3600 * 1000)
+      assert.equal(true, cookie.isExpired())
+      assert.equal(false, cookies.has('age', DOMAIN))
+    } finally {
+      Date.now = nativeNow
+      cookies.setNowTime()
+    }
+  })
+})

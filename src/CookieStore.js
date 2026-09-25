@@ -1,6 +1,7 @@
 import Cookie from './Cookie'
 import cookieParser from 'set-cookie-parser'
 import util from './util'
+import time from './time'
 import localStorage from './localStorage'
 
 /**
@@ -8,6 +9,12 @@ import localStorage from './localStorage'
  * 参考：https://github.com/charleslo1/weapp-cookie/issues/39
  */
 const COOKIE_ATTRIBUTES = /^(expires|max-age|domain|path|secure|httponly|samesite|priority|partitioned|version|comment|commenturl|discard|port)$/i
+
+/**
+ * set-cookie 的 Expires 属性
+ * 参考：https://github.com/charleslo1/weapp-cookie/issues/70
+ */
+const EXPIRES_ATTRIBUTE = /(;\s*expires\s*=\s*)([^;]*)/ig
 
 /**
  * CookieStore 类
@@ -121,6 +128,23 @@ class CookieStore {
     this.__saveToStorage()
 
     return true
+  }
+
+  /**
+   * 校准时间基准，用于设备时间被用户改动后仍能正确判断 cookie 是否过期
+   * @param  {Date|Number|String} [nowTime] 当前真实时间，缺省则恢复为设备时间
+   * @return {Date}                         校准后的当前时间
+   */
+  setNowTime (nowTime) {
+    return time.setNowTime(nowTime)
+  }
+
+  /**
+   * 获取当前时间（已校准）
+   * @return {Date} 当前时间
+   */
+  now () {
+    return time.now()
   }
 
   /**
@@ -279,6 +303,9 @@ class CookieStore {
 
     for (let cookieStr of setCookieArr) {
       if (typeof cookieStr !== 'string' || !cookieStr) continue
+      // 归一化 Expires 属性：部分 iOS 真机与 uni-app 只支持有限的日期格式，
+      // 直接把 RFC 1123 字符串交给 new Date() 会触发控制台警告（见 #70）
+      cookieStr = this.__normalizeExpires(cookieStr)
       // 处理 QQ 小程序下 cookie 分隔符问题：https://github.com/charleslo1/weapp-cookie/issues/39
       // 「;」为分隔符时其后紧跟的是新的 cookie 名，而属性（Path、Expires、Max-Age 等）不能算作新 cookie
       // 注意：匹配不能跨越逗号，否则会把「;HttpOnly,route=x」这样已经用逗号分隔的相邻 cookie 粘在一起
@@ -290,6 +317,17 @@ class CookieStore {
 
     // 过滤空字符串，并把结果交给 set-cookie-parser 解析
     return cookies.filter(cookieStr => !!cookieStr)
+  }
+
+  /**
+   * 把 set-cookie 里 Expires 属性的日期归一化成 ISO 8601 格式
+   * @param  {String} cookieStr set-cookie 字符串
+   * @return {String}           归一化后的 set-cookie 字符串
+   */
+  __normalizeExpires (cookieStr = '') {
+    return cookieStr.replace(EXPIRES_ATTRIBUTE, (matched, prefix, dateStr) => {
+      return prefix + util.normalizeDate(dateStr)
+    })
   }
 
   /**
