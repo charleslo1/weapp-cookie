@@ -15,7 +15,7 @@ class Cookie {
     this.domain = props.domain || ''
     this.path = props.path || '/'
     this.expires = props.expires ? new Date(props.expires) : null
-    this.maxAge = props.maxAge ? parseInt(props.maxAge) : null
+    this.maxAge = props.maxAge !== undefined && props.maxAge !== null ? parseInt(props.maxAge) : null
     this.httpOnly = !!props.httpOnly
     // 记录时间
     this.dateTime = props.dateTime ? new Date(props.dateTime) : new Date()
