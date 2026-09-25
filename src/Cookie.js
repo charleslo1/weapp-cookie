@@ -15,7 +15,7 @@ class Cookie {
     this.domain = props.domain || ''
     this.path = props.path || '/'
     this.expires = props.expires ? new Date(props.expires) : null
-    this.maxAge = props.maxAge ? parseInt(props.maxAge) : null
+    this.maxAge = props.maxAge !== undefined && props.maxAge !== null ? parseInt(props.maxAge) : null
     this.httpOnly = !!props.httpOnly
     // 记录时间
     this.dateTime = props.dateTime ? new Date(props.dateTime) : new Date()
@@ -49,8 +49,8 @@ class Cookie {
    * @return {Boolean} 是否有效
    */
   isExpired () {
-    // maxAge 为 0，无效
-    if (this.maxAge === 0) {
+    // maxAge 为 0 或负值，无效（RFC 6265：max-age 非正值表示立即过期）
+    if (this.maxAge !== null && this.maxAge <= 0) {
       return true
     }
     // 存活秒数超出 maxAge，无效
