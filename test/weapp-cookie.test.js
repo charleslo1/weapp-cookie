@@ -124,4 +124,18 @@ describe('weapp-cookies.js set-cookie Max-Age:0', () => {
     assert.equal(false, cookie.isExpired())
     assert.equal(true, cookies.has('keep', DOMAIN))
   })
+
+  it('Max-Age 为负数时同样立即过期（RFC 6265）', () => {
+    cookies.setResponseCookies('nag=alive; Max-Age=3600; Path=/', DOMAIN)
+    assert.equal(true, cookies.has('nag', DOMAIN))
+
+    cookies.setResponseCookies('nag=; Max-Age=-1; Path=/', DOMAIN)
+    assert.equal(false, cookies.has('nag', DOMAIN))
+    assert.equal(false, /nag=/.test(cookies.getRequestCookies(DOMAIN)))
+  })
+
+  it('未设置 maxAge 的会话 cookie 不受影响', () => {
+    cookies.setResponseCookies('session=1; Path=/', DOMAIN)
+    assert.equal(true, cookies.has('session', DOMAIN))
+  })
 })
