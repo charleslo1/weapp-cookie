@@ -1,4 +1,4 @@
-import api from './api'
+import { getHost } from './host'
 
 /**
  * LocalStorage 类
@@ -10,6 +10,9 @@ class LocalStorage {
    */
   getItem (key) {
     // 屏蔽支付宝小程序语法差异
+    let api = getHost()
+    // 宿主对象尚未就绪（如 uni-app APP 端本库先于 uni 加载）时不做读写
+    if (typeof api.getStorageSync !== 'function') return
     if (api.platform === 'my') {
       return api.getStorageSync({key: key}).data
     }
@@ -23,6 +26,9 @@ class LocalStorage {
    */
   setItem (key, value) {
     // 屏蔽支付宝小程序语法差异
+    let api = getHost()
+    // 宿主对象尚未就绪时不做读写
+    if (typeof api.setStorageSync !== 'function') return
     if (api.platform === 'my') {
       return api.setStorageSync({key: key, data: value})
     }
@@ -31,4 +37,4 @@ class LocalStorage {
 }
 
 // 单例
-export default new LocalStorage(api)
+export default new LocalStorage()

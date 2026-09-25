@@ -1,6 +1,7 @@
 import Cookie from './Cookie'
 import cookieParser from 'set-cookie-parser'
 import util from './util'
+import time from './time'
 import localStorage from './localStorage'
 
 /**
@@ -8,6 +9,12 @@ import localStorage from './localStorage'
  * 参考：https://github.com/charleslo1/weapp-cookie/issues/39
  */
 const COOKIE_ATTRIBUTES = /^(expires|max-age|domain|path|secure|httponly|samesite|priority|partitioned|version|comment|commenturl|discard|port)$/i
+
+/**
+ * set-cookie 的 Expires 属性
+ * 参考：https://github.com/charleslo1/weapp-cookie/issues/70
+ */
+const EXPIRES_ATTRIBUTE = /(;\s*expires\s*=\s*)([^;]*)/ig
 
 /**
  * CookieStore 类
@@ -64,7 +71,8 @@ class CookieStore {
    */
   set (name = '', value = '', options = {}) {
     // 构建 Cookie 实例
-    let domain = options.domain
+    // 端口号不属于域名的一部分，需要剥离，否则会存储到无法被正常匹配的域名下
+    let domain = util.stripPort(options.domain)
     if (!domain || !name) throw new Error('name 和 options.domain 值不正确！')
 
     let cookie = new Cookie(Object.assign(options, {
@@ -105,11 +113,12 @@ class CookieStore {
    */
   remove (name = '', domain = '') {
     if (domain) {
-      // 删除指定域名的 cookie
-      let cookies = this.__cookiesMap.get(domain)
-      cookies && cookies.delete(name)
-      cookies = this.__cookiesMap.get(util.normalizeDomain(domain))
-      cookies && cookies.delete(name)
+      // 删除指定域名的 cookie（同时兼容未剥离端口号的历史存储）
+      let scopeDomains = [domain, util.stripPort(domain), util.normalizeDomain(domain)]
+      scopeDomains.forEach((key) => {
+        let cookies = this.__cookiesMap.get(key)
+        cookies && cookies.delete(name)
+      })
     } else {
       // 删除所有域名的 cookie
       for (let cookies of this.__cookiesMap.values()) {
@@ -121,6 +130,23 @@ class CookieStore {
     this.__saveToStorage()
 
     return true
+  }
+
+  /**
+   * 校准时间基准，用于设备时间被用户改动后仍能正确判断 cookie 是否过期
+   * @param  {Date|Number|String} [nowTime] 当前真实时间，缺省则恢复为设备时间
+   * @return {Date}                         校准后的当前时间
+   */
+  setNowTime (nowTime) {
+    return time.setNowTime(nowTime)
+  }
+
+  /**
+   * 获取当前时间（已校准）
+   * @return {Date} 当前时间
+   */
+  now () {
+    return time.now()
   }
 
   /**
@@ -279,6 +305,9 @@ class CookieStore {
 
     for (let cookieStr of setCookieArr) {
       if (typeof cookieStr !== 'string' || !cookieStr) continue
+      // 归一化 Expires 属性：部分 iOS 真机与 uni-app 只支持有限的日期格式，
+      // 直接把 RFC 1123 字符串交给 new Date() 会触发控制台警告（见 #70）
+      cookieStr = this.__normalizeExpires(cookieStr)
       // 处理 QQ 小程序下 cookie 分隔符问题：https://github.com/charleslo1/weapp-cookie/issues/39
       // 「;」为分隔符时其后紧跟的是新的 cookie 名，而属性（Path、Expires、Max-Age 等）不能算作新 cookie
       // 注意：匹配不能跨越逗号，否则会把「;HttpOnly,route=x」这样已经用逗号分隔的相邻 cookie 粘在一起
@@ -293,6 +322,17 @@ class CookieStore {
   }
 
   /**
+   * 把 set-cookie 里 Expires 属性的日期归一化成 ISO 8601 格式
+   * @param  {String} cookieStr set-cookie 字符串
+   * @return {String}           归一化后的 set-cookie 字符串
+   */
+  __normalizeExpires (cookieStr = '') {
+    return cookieStr.replace(EXPIRES_ATTRIBUTE, (matched, prefix, dateStr) => {
+      return prefix + util.normalizeDate(dateStr)
+    })
+  }
+
+  /**
    * 解析 response set-cookie 字段
    * @param  {String|Array} setCookieStr response set-cookie 字符串或字符串数组
    * @param  {String}       domain       默认域名（如果 set-cookie 中没有设置 domain 则使用该域名）
@@ -304,7 +344,8 @@ class CookieStore {
 
     // 转换为 Cookie 对象
     return cookies.map((item) => {
-      item.domain = util.normalizeDomain(item.domain) || domain
+      // 未设置 domain 时使用请求域名，同样需要剥离端口号
+      item.domain = util.normalizeDomain(item.domain) || util.stripPort(domain)
       return new Cookie(item)
     })
   }
