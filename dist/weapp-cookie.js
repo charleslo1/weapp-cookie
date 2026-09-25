@@ -1553,25 +1553,52 @@ var Util = function () {
   }
 
   _createClass(Util, [{
-    key: 'getCookieScopeDomain',
+    key: 'stripPort',
+
+    /**
+     * 剥离域名中的端口号
+     * 端口号不属于域名的一部分，参与作用域计算会得到错误的结果，
+     * 例如 www.baidu.com.cn:2443 会被计算出 .baidu.com.cn:2443、.com.cn:2443 等无效作用域
+     * @param  {String} domain 域名
+     * @return {String}        不含端口号的域名
+     */
+    value: function stripPort() {
+      var domain = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+
+      return domain.replace(/:\d+$/g, '');
+    }
 
     /**
      * 根据域名获取该域名的 cookie 作用域范围列表
      * @param  {String} domain 指定域名
-     * @return {String}        cookie 作用域范围列表
+     * @return {Array}         cookie 作用域范围列表
      */
+
+  }, {
+    key: 'getCookieScopeDomain',
     value: function getCookieScopeDomain() {
       var domain = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
 
       if (!domain) return [];
 
-      // 获取 cookie 作用域范围列表
-      domain = domain.replace(/^\.+/ig, '');
-      var scopes = domain.split('.').map(function (k) {
-        return ['.', domain.slice(domain.indexOf(k))].join('');
+      // 原始域名（可能带端口号），用于兼容历史版本存储的 cookie
+      var originDomain = domain.replace(/^\.+/ig, '');
+
+      // 端口号不属于域名的一部分，需要先剥离，否则会伪造出错误的父级作用域
+      domain = this.stripPort(originDomain);
+
+      // 获取 cookie 作用域范围列表：域名本身 + 各级父域名
+      var scopes = [domain];
+      domain.split('.').forEach(function (name, index, names) {
+        scopes.push('.'.concat(names.slice(index).join('.')));
       });
 
-      return [domain].concat(scopes);
+      // 兼容历史版本（未剥离端口号）按带端口号的域名存储的 cookie
+      if (originDomain !== domain) {
+        scopes.push(originDomain, '.'.concat(originDomain));
+      }
+
+      return scopes;
     }
 
     /**
@@ -1585,7 +1612,8 @@ var Util = function () {
     value: function normalizeDomain() {
       var domain = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
 
-      return domain.replace(/^(\.*)?(?=\S)/ig, '.');
+      // 端口号不属于域名的一部分，需要先剥离
+      return this.stripPort(domain).replace(/^(\.*)?(?=\S)/ig, '.');
     }
   }]);
 
@@ -1874,7 +1902,8 @@ var CookieStore = function () {
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
       // 构建 Cookie 实例
-      var domain = options.domain;
+      // 端口号不属于域名的一部分，需要剥离，否则会存储到无法被正常匹配的域名下
+      var domain = util.stripPort(options.domain);
       if (!domain || !name) throw new Error('name 和 options.domain 值不正确！');
 
       var cookie = new Cookie(_Object$assign(options, {
@@ -1941,15 +1970,18 @@ var CookieStore = function () {
   }, {
     key: 'remove',
     value: function remove() {
+      var _this = this;
+
       var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
       var domain = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
 
       if (domain) {
-        // 删除指定域名的 cookie
-        var cookies = this.__cookiesMap.get(domain);
-        cookies && cookies.delete(name);
-        cookies = this.__cookiesMap.get(util.normalizeDomain(domain));
-        cookies && cookies.delete(name);
+        // 删除指定域名的 cookie（同时兼容未剥离端口号的历史存储）
+        var scopeDomains = [domain, util.stripPort(domain), util.normalizeDomain(domain)];
+        scopeDomains.forEach(function (key) {
+          var cookies = _this.__cookiesMap.get(key);
+          cookies && cookies.delete(name);
+        });
       } else {
         // 删除所有域名的 cookie
         var _iteratorNormalCompletion2 = true;
@@ -1958,9 +1990,9 @@ var CookieStore = function () {
 
         try {
           for (var _iterator2 = _getIterator(this.__cookiesMap.values()), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-            var _cookies = _step2.value;
+            var cookies = _step2.value;
 
-            _cookies.delete(name);
+            cookies.delete(name);
           }
         } catch (err) {
           _didIteratorError2 = true;
@@ -2150,7 +2182,7 @@ var CookieStore = function () {
   }, {
     key: 'setCookiesArray',
     value: function setCookiesArray() {
-      var _this = this;
+      var _this2 = this;
 
       var cookies = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
 
@@ -2158,10 +2190,10 @@ var CookieStore = function () {
 
       // Cookie 数组转换 Map 对象
       cookies.forEach(function (cookie) {
-        var cookieMap = _this.__cookiesMap.get(cookie.domain);
+        var cookieMap = _this2.__cookiesMap.get(cookie.domain);
         if (!cookieMap) {
           cookieMap = new _Map();
-          _this.__cookiesMap.set(cookie.domain, cookieMap);
+          _this2.__cookiesMap.set(cookie.domain, cookieMap);
         }
         cookieMap.set(cookie.name, cookie);
       });
@@ -2244,7 +2276,8 @@ var CookieStore = function () {
 
       // 转换为 Cookie 对象
       return cookies.map(function (item) {
-        item.domain = util.normalizeDomain(item.domain) || domain;
+        // 未设置 domain 时使用请求域名，同样需要剥离端口号
+        item.domain = util.normalizeDomain(item.domain) || util.stripPort(domain);
         return new Cookie(item);
       });
     }
@@ -2404,7 +2437,8 @@ var cookieStore = function () {
         var responseCookies = response.header ? response.header['Set-Cookie'] || response.header['set-cookie'] : '';
         if (responseCookies) {
           // 处理QQ小程序下cookie分隔符问题：https://github.com/charleslo1/weapp-cookie/issues/39
-          responseCookies = responseCookies.replace(/\;([^\s\;]*?(?=\=))/ig, ',$1');
+          // 兼容在ios设备下获取到的set-cookie为数组情况
+          responseCookies = responseCookies.toString().replace(/\;([^\s\;]*?(?=\=))/ig, ',$1');
           // 设置 cookies，以便下次请求带上
           cookieStore.setResponseCookies(responseCookies, domain);
         }
