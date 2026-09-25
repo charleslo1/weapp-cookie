@@ -42,10 +42,8 @@ const cookieStore = (function () {
         // 获取响应 cookies
         let responseCookies = response.header ? response.header['Set-Cookie'] || response.header['set-cookie'] : ''
         if (responseCookies) {
-          // 处理QQ小程序下cookie分隔符问题：https://github.com/charleslo1/weapp-cookie/issues/39
-          // 兼容在ios设备下获取到的set-cookie为数组情况
-          responseCookies = responseCookies.toString().replace(/\;([^\s\;]*?(?=\=))/ig, ',$1')
-          // 设置 cookies，以便下次请求带上
+          // 设置 cookies，以便下次请求带上（set-cookie 可能是字符串，也可能是数组，
+          // 分隔符兼容处理统一在 CookieStore 中完成）
           cookieStore.setResponseCookies(responseCookies, domain)
         }
         // 调用成功回调函数

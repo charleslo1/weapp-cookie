@@ -1,7 +1,8 @@
 global.wx = {
   setStorageSync: () => {},
   getStorageSync: () => {},
-  request: () => {}
+  // 原始请求实现，由测试用例注入（weapp-cookie 会在加载时覆写 wx.request 并持有这里的方法）
+  request: (options) => { global.wxRequestHandler && global.wxRequestHandler(options) }
 }
 const assert = require('assert')
 
@@ -56,6 +57,7 @@ describe('weapp-cookies.js', () => {
 
   it('cookies.getCookiesArray(domain)', () => {
     let result = cookies.getCookiesArray('baidu.com')
+    // EGG_SESSION、PSINO、dwf_sg_task_completion、session_id，prod_crm_session 属于 .taobao.com
     assert.equal(4, result.length)
   })
 
@@ -87,6 +89,74 @@ describe('weapp-cookies.js', () => {
     assert.notEqual(result1.length, result2.length)
   })
 
+})
+
+// 一个响应返回多个 set-cookie 的情况：https://github.com/charleslo1/weapp-cookie/issues/53
+describe('response with multiple set-cookie', () => {
+  const multiSetCookieStr = 'EGG_SESSION=abc; domain=baidu.com; path=/; expires=Fri, 27 Jul 2080 04:02:51 GMT; httponly, dwf_sg_task_completion=False; expires=Sat, 25-Aug-2080 04:04:04 GMT; Max-Age=2592000; Path=/; secure, PSINO=7; domain=.baidu.com; path=/'
+
+  it('cookies.parse(setCookieStr) 解析逗号拼接的多个 cookie', () => {
+    let result = cookies.parse(multiSetCookieStr, 'baidu.com')
+    assert.deepEqual(result.map(cookie => cookie.name), ['EGG_SESSION', 'dwf_sg_task_completion', 'PSINO'])
+  })
+
+  it('cookies.parse(setCookieArray) 兼容 ios 设备返回数组的情况', () => {
+    let result = cookies.parse([
+      'EGG_SESSION=abc; domain=baidu.com; path=/',
+      'PSINO=7; domain=.baidu.com; path=/; HttpOnly'
+    ], 'baidu.com')
+    assert.deepEqual(result.map(cookie => cookie.name), ['EGG_SESSION', 'PSINO'])
+  })
+
+  it('cookies.setResponseCookies(setCookieArray, domain) 不会因为 set-cookie 是数组而报错', () => {
+    let result = cookies.setResponseCookies([
+      'array_a=1; path=/',
+      'array_b=2; path=/; Max-Age=1800'
+    ], 'array.example.com')
+    assert.equal(true, result.get('array.example.com').has('array_a'))
+    assert.equal(true, result.get('array.example.com').has('array_b'))
+  })
+
+  it('cookies.parse(setCookieStr) 兼容 QQ 小程序分号拼接的多个 cookie', () => {
+    let result = cookies.parse('key1=value1; domain=/site; path=/; secure;key2=value2; path=/', 'qq.com')
+    assert.deepEqual(result.map(cookie => cookie.name), ['key1', 'key2'])
+  })
+
+  it('cookies.parse(setCookieStr) 不把 cookie 属性解析成 cookie', () => {
+    let result = cookies.parse('JSESSIONID=abc;path=/;Max-Age=1800;HttpOnly;SameSite=Lax, route=38ac;Path=/', 'example.com')
+    assert.deepEqual(result.map(cookie => cookie.name), ['JSESSIONID', 'route'])
+  })
+
+  it('cookies.parse(setCookieStr) 兼容属性无值且紧跟逗号分隔的多个 cookie', () => {
+    // https://github.com/charleslo1/weapp-cookie/issues/39 中反馈的真实 header
+    let result = cookies.parse('JSESSIONID=A9118060632F0DA9A0B967ADC35DF903;Path=/;HttpOnly,route=38ac858752aa1b02deb40f6abc4d204f;Path=/', 'example.com')
+    assert.deepEqual(result.map(cookie => cookie.name), ['JSESSIONID', 'route'])
+    assert.equal('/', result[0].path)
+    assert.equal(true, result[0].httpOnly)
+    assert.equal('/', result[1].path)
+  })
+
+  it('wx.request 收到数组形式的 Set-Cookie 时可以正常解析并保存', (done) => {
+    global.wxRequestHandler = (options) => {
+      options.success({
+        data: {},
+        header: {
+          'Set-Cookie': ['request_a=1; path=/; HttpOnly', 'request_b=2; path=/; Max-Age=1800']
+        }
+      })
+    }
+
+    wx.request({
+      url: 'https://request.example.com/api/user',
+      success: () => {
+        let result = cookies.getCookies('request.example.com')
+        assert.equal('1', result.request_a)
+        assert.equal('2', result.request_b)
+        assert.equal(undefined, result['Max-Age'])
+        done()
+      }
+    })
+  })
 })
 
 // 回归：https://github.com/charleslo1/weapp-cookie/issues/56

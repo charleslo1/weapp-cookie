@@ -4,6 +4,12 @@ import util from './util'
 import localStorage from './localStorage'
 
 /**
+ * cookie 属性名，用于识别「分号拼接多个 cookie」时误判成 cookie 的属性
+ * 参考：https://github.com/charleslo1/weapp-cookie/issues/39
+ */
+const COOKIE_ATTRIBUTES = /^(expires|max-age|domain|path|secure|httponly|samesite|priority|partitioned|version|comment|commenturl|discard|port)$/i
+
+/**
  * CookieStore 类
  */
 class CookieStore {
@@ -247,8 +253,8 @@ class CookieStore {
 
   /**
    * 设置 response cookies
-   * @param {String} setCookieStr response set-cookie 字符串
-   * @param {String} domain       默认域名（如果 set-cookie 中没有设置 domain 则使用该域名）
+   * @param {String|Array} setCookieStr response set-cookie 字符串或字符串数组
+   * @param {String}       domain       默认域名（如果 set-cookie 中没有设置 domain 则使用该域名）
    */
   setResponseCookies (setCookieStr, domain) {
     // 转换为 cookie 对象数组
@@ -259,14 +265,42 @@ class CookieStore {
   }
 
   /**
+   * 拆分 response set-cookie 字段，兼容以下几种情况：
+   *   1. set-cookie 为数组（ios 设备，见 #54、#69）
+   *   2. 一个响应返回多个 set-cookie，以逗号拼接（见 #53）
+   *   3. 多个 set-cookie 以分号拼接（QQ 小程序安卓端，见 #39）
+   * @param  {String|Array} setCookieStr response set-cookie 字符串或字符串数组
+   * @return {Array}        set-cookie 字符串数组
+   */
+  __splitCookiesString (setCookieStr) {
+    // 统一为数组，兼容 ios 设备下获取到的 set-cookie 为数组的情况
+    let setCookieArr = Array.isArray(setCookieStr) ? setCookieStr : [setCookieStr]
+    let cookies = []
+
+    for (let cookieStr of setCookieArr) {
+      if (typeof cookieStr !== 'string' || !cookieStr) continue
+      // 处理 QQ 小程序下 cookie 分隔符问题：https://github.com/charleslo1/weapp-cookie/issues/39
+      // 「;」为分隔符时其后紧跟的是新的 cookie 名，而属性（Path、Expires、Max-Age 等）不能算作新 cookie
+      // 注意：匹配不能跨越逗号，否则会把「;HttpOnly,route=x」这样已经用逗号分隔的相邻 cookie 粘在一起
+      cookieStr = cookieStr.replace(/;([^\s;,=]+)(?==)/g, (separator, name) => {
+        return COOKIE_ATTRIBUTES.test(name) ? separator : `,${name}`
+      })
+      cookies = cookies.concat(cookieParser.splitCookiesString(cookieStr))
+    }
+
+    // 过滤空字符串，并把结果交给 set-cookie-parser 解析
+    return cookies.filter(cookieStr => !!cookieStr)
+  }
+
+  /**
    * 解析 response set-cookie 字段
-   * @param  {String} setCookieStr response set-cookie 字符串
-   * @param  {String} domain       默认域名（如果 set-cookie 中没有设置 domain 则使用该域名）
-   * @return {Array}               Cookie 对象数组
+   * @param  {String|Array} setCookieStr response set-cookie 字符串或字符串数组
+   * @param  {String}       domain       默认域名（如果 set-cookie 中没有设置 domain 则使用该域名）
+   * @return {Array}        Cookie 对象数组
    */
   parse (setCookieStr = '', domain) {
     // parse
-    var cookies = cookieParser.parse(cookieParser.splitCookiesString(setCookieStr), { decodeValues: false })
+    var cookies = cookieParser.parse(this.__splitCookiesString(setCookieStr), { decodeValues: false })
 
     // 转换为 Cookie 对象
     return cookies.map((item) => {
