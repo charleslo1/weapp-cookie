@@ -1,17 +1,20 @@
 {
   "name": "weapp-cookie",
-  "version": "1.4.6",
+  "version": "1.4.9",
   "description": "一行代码让微信小程序支持 cookie，以保证基于 cookie 的服务器会话机制不会失效，与 web 端共用会话机制",
   "main": "dist/weapp-cookie.js",
+  "types": "index.d.ts",
   "files": [
     "assets",
     "dist",
     "src",
     "test",
-    "index.js"
+    "index.js",
+    "index.d.ts"
   ],
   "scripts": {
     "build": "gulp build",
+    "build:rollup": "node build/rollup-build.js",
     "lint": "gulp lint",
     "test": "mocha"
   },

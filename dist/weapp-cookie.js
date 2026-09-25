@@ -12,6 +12,93 @@ function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
 
+// 7.2.1 RequireObjectCoercible(argument)
+var _defined = function (it) {
+  if (it == undefined) throw TypeError("Can't call method on  " + it);
+  return it;
+};
+
+// 7.1.13 ToObject(argument)
+
+var _toObject = function (it) {
+  return Object(_defined(it));
+};
+
+var hasOwnProperty = {}.hasOwnProperty;
+var _has = function (it, key) {
+  return hasOwnProperty.call(it, key);
+};
+
+var toString = {}.toString;
+
+var _cof = function (it) {
+  return toString.call(it).slice(8, -1);
+};
+
+// fallback for non-array-like ES3 and non-enumerable old V8 strings
+
+// eslint-disable-next-line no-prototype-builtins
+var _iobject = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
+  return _cof(it) == 'String' ? it.split('') : Object(it);
+};
+
+// to indexed object, toObject with fallback for non-array-like ES3 strings
+
+
+var _toIobject = function (it) {
+  return _iobject(_defined(it));
+};
+
+// 7.1.4 ToInteger
+var ceil = Math.ceil;
+var floor = Math.floor;
+var _toInteger = function (it) {
+  return isNaN(it = +it) ? 0 : (it > 0 ? floor : ceil)(it);
+};
+
+// 7.1.15 ToLength
+
+var min = Math.min;
+var _toLength = function (it) {
+  return it > 0 ? min(_toInteger(it), 0x1fffffffffffff) : 0; // pow(2, 53) - 1 == 9007199254740991
+};
+
+var max = Math.max;
+var min$1 = Math.min;
+var _toAbsoluteIndex = function (index, length) {
+  index = _toInteger(index);
+  return index < 0 ? max(index + length, 0) : min$1(index, length);
+};
+
+// false -> Array#indexOf
+// true  -> Array#includes
+
+
+
+var _arrayIncludes = function (IS_INCLUDES) {
+  return function ($this, el, fromIndex) {
+    var O = _toIobject($this);
+    var length = _toLength(O.length);
+    var index = _toAbsoluteIndex(fromIndex, length);
+    var value;
+    // Array#includes uses SameValueZero equality algorithm
+    // eslint-disable-next-line no-self-compare
+    if (IS_INCLUDES && el != el) while (length > index) {
+      value = O[index++];
+      // eslint-disable-next-line no-self-compare
+      if (value != value) return true;
+    // Array#indexOf ignores holes, Array#includes - not
+    } else for (;length > index; index++) if (IS_INCLUDES || index in O) {
+      if (O[index] === el) return IS_INCLUDES || index || 0;
+    } return !IS_INCLUDES && -1;
+  };
+};
+
+var _core = createCommonjsModule(function (module) {
+var core = module.exports = { version: '2.5.7' };
+if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
+});
+
 var _global = createCommonjsModule(function (module) {
 // https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
 var global = module.exports = typeof window != 'undefined' && window.Math == Math
@@ -21,10 +108,61 @@ var global = module.exports = typeof window != 'undefined' && window.Math == Mat
 if (typeof __g == 'number') __g = global; // eslint-disable-line no-undef
 });
 
-var _core = createCommonjsModule(function (module) {
-var core = module.exports = { version: '2.5.7' };
-if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
+var _library = true;
+
+var _shared = createCommonjsModule(function (module) {
+var SHARED = '__core-js_shared__';
+var store = _global[SHARED] || (_global[SHARED] = {});
+
+(module.exports = function (key, value) {
+  return store[key] || (store[key] = value !== undefined ? value : {});
+})('versions', []).push({
+  version: _core.version,
+  mode: _library ? 'pure' : 'global',
+  copyright: '© 2018 Denis Pushkarev (zloirock.ru)'
 });
+});
+
+var id = 0;
+var px = Math.random();
+var _uid = function (key) {
+  return 'Symbol('.concat(key === undefined ? '' : key, ')_', (++id + px).toString(36));
+};
+
+var shared = _shared('keys');
+
+var _sharedKey = function (key) {
+  return shared[key] || (shared[key] = _uid(key));
+};
+
+var arrayIndexOf = _arrayIncludes(false);
+var IE_PROTO = _sharedKey('IE_PROTO');
+
+var _objectKeysInternal = function (object, names) {
+  var O = _toIobject(object);
+  var i = 0;
+  var result = [];
+  var key;
+  for (key in O) if (key != IE_PROTO) _has(O, key) && result.push(key);
+  // Don't enum bug & hidden keys
+  while (names.length > i) if (_has(O, key = names[i++])) {
+    ~arrayIndexOf(result, key) || result.push(key);
+  }
+  return result;
+};
+
+// IE 8- don't enum bug keys
+var _enumBugKeys = (
+  'constructor,hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'
+).split(',');
+
+// 19.1.2.14 / 15.2.3.14 Object.keys(O)
+
+
+
+var _objectKeys = Object.keys || function keys(O) {
+  return _objectKeysInternal(O, _enumBugKeys);
+};
 
 var _aFunction = function (it) {
   if (typeof it != 'function') throw TypeError(it + ' is not a function!');
@@ -132,11 +270,6 @@ var _hide = _descriptors ? function (object, key, value) {
   return object;
 };
 
-var hasOwnProperty = {}.hasOwnProperty;
-var _has = function (it, key) {
-  return hasOwnProperty.call(it, key);
-};
-
 var PROTOTYPE = 'prototype';
 
 var $export = function (type, name, source) {
@@ -195,236 +328,34 @@ $export.U = 64;  // safe
 $export.R = 128; // real proto method for `library`
 var _export = $export;
 
-// 19.1.2.4 / 15.2.3.6 Object.defineProperty(O, P, Attributes)
-_export(_export.S + _export.F * !_descriptors, 'Object', { defineProperty: _objectDp.f });
+// most Object methods by ES6 should accept primitives
 
-var $Object = _core.Object;
-var defineProperty$1 = function defineProperty(it, key, desc) {
-  return $Object.defineProperty(it, key, desc);
+
+
+var _objectSap = function (KEY, exec) {
+  var fn = (_core.Object || {})[KEY] || Object[KEY];
+  var exp = {};
+  exp[KEY] = exec(fn);
+  _export(_export.S + _export.F * _fails(function () { fn(1); }), 'Object', exp);
 };
 
-var defineProperty = createCommonjsModule(function (module) {
-module.exports = { "default": defineProperty$1, __esModule: true };
-});
-
-var _Object$defineProperty = unwrapExports(defineProperty);
-
-var toString = {}.toString;
-
-var _cof = function (it) {
-  return toString.call(it).slice(8, -1);
-};
-
-// fallback for non-array-like ES3 and non-enumerable old V8 strings
-
-// eslint-disable-next-line no-prototype-builtins
-var _iobject = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
-  return _cof(it) == 'String' ? it.split('') : Object(it);
-};
-
-// 7.2.1 RequireObjectCoercible(argument)
-var _defined = function (it) {
-  if (it == undefined) throw TypeError("Can't call method on  " + it);
-  return it;
-};
-
-// to indexed object, toObject with fallback for non-array-like ES3 strings
-
-
-var _toIobject = function (it) {
-  return _iobject(_defined(it));
-};
-
-// 7.1.4 ToInteger
-var ceil = Math.ceil;
-var floor = Math.floor;
-var _toInteger = function (it) {
-  return isNaN(it = +it) ? 0 : (it > 0 ? floor : ceil)(it);
-};
-
-// 7.1.15 ToLength
-
-var min = Math.min;
-var _toLength = function (it) {
-  return it > 0 ? min(_toInteger(it), 0x1fffffffffffff) : 0; // pow(2, 53) - 1 == 9007199254740991
-};
-
-var max = Math.max;
-var min$1 = Math.min;
-var _toAbsoluteIndex = function (index, length) {
-  index = _toInteger(index);
-  return index < 0 ? max(index + length, 0) : min$1(index, length);
-};
-
-// false -> Array#indexOf
-// true  -> Array#includes
+// 19.1.2.14 Object.keys(O)
 
 
 
-var _arrayIncludes = function (IS_INCLUDES) {
-  return function ($this, el, fromIndex) {
-    var O = _toIobject($this);
-    var length = _toLength(O.length);
-    var index = _toAbsoluteIndex(fromIndex, length);
-    var value;
-    // Array#includes uses SameValueZero equality algorithm
-    // eslint-disable-next-line no-self-compare
-    if (IS_INCLUDES && el != el) while (length > index) {
-      value = O[index++];
-      // eslint-disable-next-line no-self-compare
-      if (value != value) return true;
-    // Array#indexOf ignores holes, Array#includes - not
-    } else for (;length > index; index++) if (IS_INCLUDES || index in O) {
-      if (O[index] === el) return IS_INCLUDES || index || 0;
-    } return !IS_INCLUDES && -1;
+_objectSap('keys', function () {
+  return function keys(it) {
+    return _objectKeys(_toObject(it));
   };
-};
-
-var _library = true;
-
-var _shared = createCommonjsModule(function (module) {
-var SHARED = '__core-js_shared__';
-var store = _global[SHARED] || (_global[SHARED] = {});
-
-(module.exports = function (key, value) {
-  return store[key] || (store[key] = value !== undefined ? value : {});
-})('versions', []).push({
-  version: _core.version,
-  mode: _library ? 'pure' : 'global',
-  copyright: '© 2018 Denis Pushkarev (zloirock.ru)'
-});
 });
 
-var id = 0;
-var px = Math.random();
-var _uid = function (key) {
-  return 'Symbol('.concat(key === undefined ? '' : key, ')_', (++id + px).toString(36));
-};
+var keys$1 = _core.Object.keys;
 
-var shared = _shared('keys');
-
-var _sharedKey = function (key) {
-  return shared[key] || (shared[key] = _uid(key));
-};
-
-var arrayIndexOf = _arrayIncludes(false);
-var IE_PROTO = _sharedKey('IE_PROTO');
-
-var _objectKeysInternal = function (object, names) {
-  var O = _toIobject(object);
-  var i = 0;
-  var result = [];
-  var key;
-  for (key in O) if (key != IE_PROTO) _has(O, key) && result.push(key);
-  // Don't enum bug & hidden keys
-  while (names.length > i) if (_has(O, key = names[i++])) {
-    ~arrayIndexOf(result, key) || result.push(key);
-  }
-  return result;
-};
-
-// IE 8- don't enum bug keys
-var _enumBugKeys = (
-  'constructor,hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'
-).split(',');
-
-// 19.1.2.14 / 15.2.3.14 Object.keys(O)
-
-
-
-var _objectKeys = Object.keys || function keys(O) {
-  return _objectKeysInternal(O, _enumBugKeys);
-};
-
-var f$1 = Object.getOwnPropertySymbols;
-
-var _objectGops = {
-	f: f$1
-};
-
-var f$2 = {}.propertyIsEnumerable;
-
-var _objectPie = {
-	f: f$2
-};
-
-// 7.1.13 ToObject(argument)
-
-var _toObject = function (it) {
-  return Object(_defined(it));
-};
-
-'use strict';
-// 19.1.2.1 Object.assign(target, source, ...)
-
-
-
-
-
-var $assign = Object.assign;
-
-// should work with symbols and should have deterministic property order (V8 bug)
-var _objectAssign = !$assign || _fails(function () {
-  var A = {};
-  var B = {};
-  // eslint-disable-next-line no-undef
-  var S = Symbol();
-  var K = 'abcdefghijklmnopqrst';
-  A[S] = 7;
-  K.split('').forEach(function (k) { B[k] = k; });
-  return $assign({}, A)[S] != 7 || Object.keys($assign({}, B)).join('') != K;
-}) ? function assign(target, source) { // eslint-disable-line no-unused-vars
-  var T = _toObject(target);
-  var aLen = arguments.length;
-  var index = 1;
-  var getSymbols = _objectGops.f;
-  var isEnum = _objectPie.f;
-  while (aLen > index) {
-    var S = _iobject(arguments[index++]);
-    var keys = getSymbols ? _objectKeys(S).concat(getSymbols(S)) : _objectKeys(S);
-    var length = keys.length;
-    var j = 0;
-    var key;
-    while (length > j) if (isEnum.call(S, key = keys[j++])) T[key] = S[key];
-  } return T;
-} : $assign;
-
-// 19.1.3.1 Object.assign(target, source)
-
-
-_export(_export.S + _export.F, 'Object', { assign: _objectAssign });
-
-var assign$1 = _core.Object.assign;
-
-var assign = createCommonjsModule(function (module) {
-module.exports = { "default": assign$1, __esModule: true };
+var keys = createCommonjsModule(function (module) {
+module.exports = { "default": keys$1, __esModule: true };
 });
 
-var _Object$assign = unwrapExports(assign);
-
-var _objectDps = _descriptors ? Object.defineProperties : function defineProperties(O, Properties) {
-  _anObject(O);
-  var keys = _objectKeys(Properties);
-  var length = keys.length;
-  var i = 0;
-  var P;
-  while (length > i) _objectDp.f(O, P = keys[i++], Properties[P]);
-  return O;
-};
-
-// 19.1.2.3 / 15.2.3.7 Object.defineProperties(O, Properties)
-_export(_export.S + _export.F * !_descriptors, 'Object', { defineProperties: _objectDps });
-
-var $Object$1 = _core.Object;
-var defineProperties$1 = function defineProperties(T, D) {
-  return $Object$1.defineProperties(T, D);
-};
-
-var defineProperties = createCommonjsModule(function (module) {
-module.exports = { "default": defineProperties$1, __esModule: true };
-});
-
-var _Object$defineProperties = unwrapExports(defineProperties);
+var _Object$keys = unwrapExports(keys);
 
 var _addToUnscopables = function () { /* empty */ };
 
@@ -435,6 +366,16 @@ var _iterStep = function (done, value) {
 var _iterators = {};
 
 var _redefine = _hide;
+
+var _objectDps = _descriptors ? Object.defineProperties : function defineProperties(O, Properties) {
+  _anObject(O);
+  var keys = _objectKeys(Properties);
+  var length = keys.length;
+  var i = 0;
+  var P;
+  while (length > i) _objectDp.f(O, P = keys[i++], Properties[P]);
+  return O;
+};
 
 var document$1 = _global.document;
 var _html = document$1 && document$1.documentElement;
@@ -712,26 +653,8 @@ var _classof = function (it) {
 
 var ITERATOR$1 = _wks('iterator');
 
-var core_isIterable = _core.isIterable = function (it) {
-  var O = Object(it);
-  return O[ITERATOR$1] !== undefined
-    || '@@iterator' in O
-    // eslint-disable-next-line no-prototype-builtins
-    || _iterators.hasOwnProperty(_classof(O));
-};
-
-var isIterable$2 = core_isIterable;
-
-var isIterable = createCommonjsModule(function (module) {
-module.exports = { "default": isIterable$2, __esModule: true };
-});
-
-unwrapExports(isIterable);
-
-var ITERATOR$2 = _wks('iterator');
-
 var core_getIteratorMethod = _core.getIteratorMethod = function (it) {
-  if (it != undefined) return it[ITERATOR$2]
+  if (it != undefined) return it[ITERATOR$1]
     || it['@@iterator']
     || _iterators[_classof(it)];
 };
@@ -749,6 +672,67 @@ module.exports = { "default": getIterator$1, __esModule: true };
 });
 
 var _getIterator = unwrapExports(getIterator);
+
+// 19.1.2.4 / 15.2.3.6 Object.defineProperty(O, P, Attributes)
+_export(_export.S + _export.F * !_descriptors, 'Object', { defineProperty: _objectDp.f });
+
+var $Object = _core.Object;
+var defineProperty$2 = function defineProperty(it, key, desc) {
+  return $Object.defineProperty(it, key, desc);
+};
+
+var defineProperty$1 = createCommonjsModule(function (module) {
+module.exports = { "default": defineProperty$2, __esModule: true };
+});
+
+var _Object$defineProperty = unwrapExports(defineProperty$1);
+
+var defineProperty = createCommonjsModule(function (module, exports) {
+"use strict";
+
+exports.__esModule = true;
+
+
+
+var _defineProperty2 = _interopRequireDefault(defineProperty$1);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = function (obj, key, value) {
+  if (key in obj) {
+    (0, _defineProperty2.default)(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+};
+});
+
+var _defineProperty = unwrapExports(defineProperty);
+
+var ITERATOR$2 = _wks('iterator');
+
+var core_isIterable = _core.isIterable = function (it) {
+  var O = Object(it);
+  return O[ITERATOR$2] !== undefined
+    || '@@iterator' in O
+    // eslint-disable-next-line no-prototype-builtins
+    || _iterators.hasOwnProperty(_classof(O));
+};
+
+var isIterable$2 = core_isIterable;
+
+var isIterable = createCommonjsModule(function (module) {
+module.exports = { "default": isIterable$2, __esModule: true };
+});
+
+unwrapExports(isIterable);
 
 var slicedToArray = createCommonjsModule(function (module, exports) {
 "use strict";
@@ -805,6 +789,66 @@ exports.default = function () {
 });
 
 var _slicedToArray = unwrapExports(slicedToArray);
+
+var f$1 = Object.getOwnPropertySymbols;
+
+var _objectGops = {
+	f: f$1
+};
+
+var f$2 = {}.propertyIsEnumerable;
+
+var _objectPie = {
+	f: f$2
+};
+
+'use strict';
+// 19.1.2.1 Object.assign(target, source, ...)
+
+
+
+
+
+var $assign = Object.assign;
+
+// should work with symbols and should have deterministic property order (V8 bug)
+var _objectAssign = !$assign || _fails(function () {
+  var A = {};
+  var B = {};
+  // eslint-disable-next-line no-undef
+  var S = Symbol();
+  var K = 'abcdefghijklmnopqrst';
+  A[S] = 7;
+  K.split('').forEach(function (k) { B[k] = k; });
+  return $assign({}, A)[S] != 7 || Object.keys($assign({}, B)).join('') != K;
+}) ? function assign(target, source) { // eslint-disable-line no-unused-vars
+  var T = _toObject(target);
+  var aLen = arguments.length;
+  var index = 1;
+  var getSymbols = _objectGops.f;
+  var isEnum = _objectPie.f;
+  while (aLen > index) {
+    var S = _iobject(arguments[index++]);
+    var keys = getSymbols ? _objectKeys(S).concat(getSymbols(S)) : _objectKeys(S);
+    var length = keys.length;
+    var j = 0;
+    var key;
+    while (length > j) if (isEnum.call(S, key = keys[j++])) T[key] = S[key];
+  } return T;
+} : $assign;
+
+// 19.1.3.1 Object.assign(target, source)
+
+
+_export(_export.S + _export.F, 'Object', { assign: _objectAssign });
+
+var assign$1 = _core.Object.assign;
+
+var assign = createCommonjsModule(function (module) {
+module.exports = { "default": assign$1, __esModule: true };
+});
+
+var _Object$assign = unwrapExports(assign);
 
 var _redefineAll = function (target, src, safe) {
   for (var key in src) {
@@ -1335,7 +1379,7 @@ exports.__esModule = true;
 
 
 
-var _defineProperty2 = _interopRequireDefault(defineProperty);
+var _defineProperty2 = _interopRequireDefault(defineProperty$1);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -1547,19 +1591,100 @@ setCookie.splitCookiesString = splitCookiesString_1;
 /**
  * Util 类
  */
+
+/**
+ * 常用的月份缩写，用于解析 RFC 1123 格式的日期字符串
+ */
+var MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
+/**
+ * RFC 1123 日期（set-cookie 的 Expires 属性），兼容以下写法：
+ *   Sun, 06 Nov 1994 08:49:37 GMT
+ *   Sun, 06-Nov-94 08:49:37 GMT
+ *   Sun Nov  6 08:49:37 1994
+ * 参考：https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Date
+ */
+var RFC1123_DATE = /^(?:[a-z]{3},?\s+)?(\d{1,2})[-\s]+([a-z]{3})[-\s]+(\d{2,4})\s+(\d{1,2}):(\d{2}):(\d{2})\s*(gmt|utc|z|([+-])(\d{2}):?(\d{2}))?$/i;
+
 var Util = function () {
   function Util() {
     _classCallCheck(this, Util);
   }
 
   _createClass(Util, [{
-    key: 'getCookieScopeDomain',
+    key: 'pad',
+
+    /**
+     * 补齐两位数字
+     * @param  {Number} num 数字
+     * @return {String}     两位字符串
+     */
+    value: function pad(num) {
+      return num < 10 ? '0' + num : '' + num;
+    }
+
+    /**
+     * 解析 RFC 1123 格式的日期字符串，返回时间戳（毫秒）
+     *
+     * 不使用 Date.parse / new Date(字符串)：在 uni-app 与部分 iOS 真机上，
+     * new Date('Mon, 01 Dec 2025 09:48:36 GMT') 这样的调用会被判定为「不支持的格式」
+     * 而打印控制台警告（见 #70），所以这里自行解析。
+     * @param  {String} dateStr 日期字符串
+     * @return {Number|null}    时间戳，无法解析时返回 null
+     */
+
+  }, {
+    key: 'parseDate',
+    value: function parseDate() {
+      var dateStr = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+
+      var matched = String(dateStr).trim().match(RFC1123_DATE);
+      if (!matched) return null;
+
+      var month = MONTHS.indexOf(matched[2].toLowerCase());
+      if (month < 0) return null;
+
+      // 两位年份按 RFC 6265 约定补全
+      var year = parseInt(matched[3], 10);
+      if (year < 100) year += year >= 70 ? 1900 : 2000;
+
+      var time = Date.UTC(year, month, parseInt(matched[1], 10), parseInt(matched[4], 10), parseInt(matched[5], 10), parseInt(matched[6], 10));
+
+      // 时区偏移（默认 GMT）
+      if (matched[8]) {
+        var offset = (parseInt(matched[9], 10) * 60 + parseInt(matched[10], 10)) * 60 * 1000;
+        time += matched[8] === '-' ? offset : -offset;
+      }
+
+      return isNaN(time) ? null : time;
+    }
+
+    /**
+     * 把任意日期字符串归一化成 iOS / uni-app 都支持的 ISO 8601 格式
+     * @param  {String} dateStr 日期字符串
+     * @return {String}         归一化后的日期字符串，无法解析时原样返回
+     */
+
+  }, {
+    key: 'normalizeDate',
+    value: function normalizeDate() {
+      var dateStr = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+
+      var time = this.parseDate(dateStr);
+      if (time === null) return dateStr;
+
+      var date = new Date(time);
+      return [date.getUTCFullYear(), this.pad(date.getUTCMonth() + 1), this.pad(date.getUTCDate())].join('-') + 'T' + [this.pad(date.getUTCHours()), this.pad(date.getUTCMinutes()), this.pad(date.getUTCSeconds())].join(':') + '+00:00';
+    }
 
     /**
      * 根据域名获取该域名的 cookie 作用域范围列表
      * @param  {String} domain 指定域名
      * @return {String}        cookie 作用域范围列表
      */
+
+  }, {
+    key: 'getCookieScopeDomain',
     value: function getCookieScopeDomain() {
       var domain = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
 
@@ -1595,6 +1720,79 @@ var Util = function () {
 var util = new Util();
 
 /**
+ * 时间基准
+ *
+ * 默认直接使用设备时间，但设备时间可以被用户手动修改，一旦改到未来，
+ * 所有 cookie 都会被判定为已过期并从 Storage 中清掉（见 #67）。
+ * 使用者可以用 setNowTime 手动校准一次时间基准，以服务端时间为准。
+ */
+
+var Time = function () {
+  function Time() {
+    _classCallCheck(this, Time);
+
+    // 校准后的时间与设备时间的偏移量（毫秒）
+    this.__offsetTime = 0;
+  }
+
+  /**
+   * 校准时间基准
+   * @param  {Date|Number|String} [nowTime] 当前真实时间，缺省则恢复为设备时间
+   * @return {Date}                         校准后的当前时间
+   */
+
+
+  _createClass(Time, [{
+    key: 'setNowTime',
+    value: function setNowTime(nowTime) {
+      if (nowTime === undefined || nowTime === null || nowTime === '') {
+        this.__offsetTime = 0;
+        return this.now();
+      }
+
+      var time = nowTime instanceof Date ? nowTime.getTime() : typeof nowTime === 'number' ? nowTime : util.parseDate(nowTime);
+
+      if (time === null || isNaN(time)) {
+        throw new Error('weapp-cookie: setNowTime 的时间格式无法解析：' + nowTime);
+      }
+
+      this.__offsetTime = time - Date.now();
+
+      return this.now();
+    }
+
+    /**
+     * 获取当前时间（已校准）
+     * @return {Date} 当前时间
+     */
+
+  }, {
+    key: 'now',
+    value: function now() {
+      return new Date(this.getTime());
+    }
+
+    /**
+     * 获取当前时间的时间戳（已校准）
+     * @return {Number} 时间戳
+     */
+
+  }, {
+    key: 'getTime',
+    value: function getTime() {
+      return Date.now() + this.__offsetTime;
+    }
+  }]);
+
+  return Time;
+}();
+
+// 单例
+
+
+var time = new Time();
+
+/**
  * Cookie 类
  */
 
@@ -1614,7 +1812,7 @@ var Cookie = function () {
     this.maxAge = props.maxAge !== undefined && props.maxAge !== null ? parseInt(props.maxAge) : null;
     this.httpOnly = !!props.httpOnly;
     // 记录时间
-    this.dateTime = props.dateTime ? new Date(props.dateTime) : new Date();
+    this.dateTime = props.dateTime ? new Date(props.dateTime) : time.now();
   }
 
   /**
@@ -1631,7 +1829,7 @@ var Cookie = function () {
       if (cookie) {
         _Object$assign(this, cookie);
         // 更新设置时间
-        this.dateTime = new Date();
+        this.dateTime = time.now();
       }
 
       return this;
@@ -1663,11 +1861,11 @@ var Cookie = function () {
       }
       // 存活秒数超出 maxAge，无效
       if (this.maxAge > 0) {
-        var seconds = (Date.now() - this.dateTime.getTime()) / 1000;
+        var seconds = (time.getTime() - this.dateTime.getTime()) / 1000;
         return seconds > this.maxAge;
       }
       // expires 小于当前时间，无效
-      if (this.expires && this.expires < new Date()) {
+      if (this.expires && this.expires < time.now()) {
         return true;
       }
       return false;
@@ -1724,30 +1922,31 @@ var Cookie = function () {
 }();
 
 /**
- * 适配小程序API宿主对象
+ * 当前宿主对象
+ *
+ * 宿主对象（wx / my / tt / swan / qq / uni）既可能在本库加载前就绪，
+ * 也可能在本库之后才出现（uni-app APP 端，见 #58）。Storage、平台判断
+ * 与请求代理都从这里取当前宿主，以便宿主变化后立即生效。
  */
+var host = { platform: 'none'
 
-function getApi() {
-  if (typeof my !== 'undefined') {
-    my.platform = 'my';
-    return my;
-  } else if (typeof tt !== 'undefined') {
-    tt.platform = 'tt';
-    return tt;
-  } else if (typeof swan !== 'undefined') {
-    swan.platform = 'swan';
-    return swan;
-  } else if (typeof qq !== 'undefined') {
-    qq.platform = 'qq';
-    return qq;
-  } else if (typeof wx !== 'undefined') {
-    wx.platform = typeof window !== 'undefined' && typeof location !== 'undefined' ? 'h5' : 'wx';
-    return wx;
-  }
-  return { platform: 'none' };
+  /**
+   * 获取当前宿主对象
+   * @return {Object} 宿主对象
+   */
+};function getHost() {
+  return host;
 }
 
-var api = getApi();
+/**
+ * 设置当前宿主对象
+ * @param  {Object} target 宿主对象
+ * @return {Object}        设置后的宿主对象
+ */
+function setHost(target) {
+  if (target) host = target;
+  return host;
+}
 
 /**
  * LocalStorage 类
@@ -1767,6 +1966,9 @@ var LocalStorage = function () {
      */
     value: function getItem(key) {
       // 屏蔽支付宝小程序语法差异
+      var api = getHost();
+      // 宿主对象尚未就绪（如 uni-app APP 端本库先于 uni 加载）时不做读写
+      if (typeof api.getStorageSync !== 'function') return;
       if (api.platform === 'my') {
         return api.getStorageSync({ key: key }).data;
       }
@@ -1783,6 +1985,9 @@ var LocalStorage = function () {
     key: 'setItem',
     value: function setItem(key, value) {
       // 屏蔽支付宝小程序语法差异
+      var api = getHost();
+      // 宿主对象尚未就绪时不做读写
+      if (typeof api.setStorageSync !== 'function') return;
       if (api.platform === 'my') {
         return api.setStorageSync({ key: key, data: value });
       }
@@ -1796,13 +2001,19 @@ var LocalStorage = function () {
 // 单例
 
 
-var localStorage = new LocalStorage(api);
+var localStorage = new LocalStorage();
 
 /**
  * cookie 属性名，用于识别「分号拼接多个 cookie」时误判成 cookie 的属性
  * 参考：https://github.com/charleslo1/weapp-cookie/issues/39
  */
 var COOKIE_ATTRIBUTES = /^(expires|max-age|domain|path|secure|httponly|samesite|priority|partitioned|version|comment|commenturl|discard|port)$/i;
+
+/**
+ * set-cookie 的 Expires 属性
+ * 参考：https://github.com/charleslo1/weapp-cookie/issues/70
+ */
+var EXPIRES_ATTRIBUTE = /(;\s*expires\s*=\s*)([^;]*)/ig;
 
 /**
  * CookieStore 类
@@ -1988,6 +2199,29 @@ var CookieStore = function () {
       this.__saveToStorage();
 
       return true;
+    }
+
+    /**
+     * 校准时间基准，用于设备时间被用户改动后仍能正确判断 cookie 是否过期
+     * @param  {Date|Number|String} [nowTime] 当前真实时间，缺省则恢复为设备时间
+     * @return {Date}                         校准后的当前时间
+     */
+
+  }, {
+    key: 'setNowTime',
+    value: function setNowTime(nowTime) {
+      return time.setNowTime(nowTime);
+    }
+
+    /**
+     * 获取当前时间（已校准）
+     * @return {Date} 当前时间
+     */
+
+  }, {
+    key: 'now',
+    value: function now() {
+      return time.now();
     }
 
     /**
@@ -2257,6 +2491,9 @@ var CookieStore = function () {
           var cookieStr = _step6.value;
 
           if (typeof cookieStr !== 'string' || !cookieStr) continue;
+          // 归一化 Expires 属性：部分 iOS 真机与 uni-app 只支持有限的日期格式，
+          // 直接把 RFC 1123 字符串交给 new Date() 会触发控制台警告（见 #70）
+          cookieStr = this.__normalizeExpires(cookieStr);
           // 处理 QQ 小程序下 cookie 分隔符问题：https://github.com/charleslo1/weapp-cookie/issues/39
           // 「;」为分隔符时其后紧跟的是新的 cookie 名，而属性（Path、Expires、Max-Age 等）不能算作新 cookie
           // 注意：匹配不能跨越逗号，否则会把「;HttpOnly,route=x」这样已经用逗号分隔的相邻 cookie 粘在一起
@@ -2284,6 +2521,22 @@ var CookieStore = function () {
 
       return cookies.filter(function (cookieStr) {
         return !!cookieStr;
+      });
+    }
+
+    /**
+     * 把 set-cookie 里 Expires 属性的日期归一化成 ISO 8601 格式
+     * @param  {String} cookieStr set-cookie 字符串
+     * @return {String}           归一化后的 set-cookie 字符串
+     */
+
+  }, {
+    key: '__normalizeExpires',
+    value: function __normalizeExpires() {
+      var cookieStr = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+
+      return cookieStr.replace(EXPIRES_ATTRIBUTE, function (matched, prefix, dateStr) {
+        return prefix + util.normalizeDate(dateStr);
       });
     }
 
@@ -2424,17 +2677,78 @@ var CookieStore = function () {
 }();
 
 /**
+ * 适配小程序API宿主对象
+ */
+/**
+ * 识别宿主对象属于哪个平台
+ * @param  {Object} api 宿主对象
+ * @return {String}     平台标识
+ */
+function detectPlatform(api) {
+  if (!api) return 'none';
+  if (typeof my !== 'undefined' && api === my) return 'my';
+  if (typeof tt !== 'undefined' && api === tt) return 'tt';
+  if (typeof swan !== 'undefined' && api === swan) return 'swan';
+  if (typeof qq !== 'undefined' && api === qq) return 'qq';
+  if (typeof wx !== 'undefined' && api === wx) {
+    return typeof window !== 'undefined' && typeof location !== 'undefined' ? 'h5' : 'wx';
+  }
+  return 'none';
+}
+
+function getApi() {
+  if (typeof my !== 'undefined') {
+    my.platform = detectPlatform(my);
+    return my;
+  } else if (typeof tt !== 'undefined') {
+    tt.platform = detectPlatform(tt);
+    return tt;
+  } else if (typeof swan !== 'undefined') {
+    swan.platform = detectPlatform(swan);
+    return swan;
+  } else if (typeof qq !== 'undefined') {
+    qq.platform = detectPlatform(qq);
+    return qq;
+  } else if (typeof wx !== 'undefined') {
+    wx.platform = detectPlatform(wx);
+    return wx;
+  }
+  return { platform: 'none' };
+}
+
+var api = getApi();
+
+// 记录当前宿主对象，供 Storage、请求代理等模块取用
+setHost(api);
+
+/**
  * 微信 Cookie 代理
  */
 var cookieStore = function () {
   // 创建 cookieStore 实例
   var cookieStore = new CookieStore();
 
-  /**
-   * 定义请求 cookie 代理函数
-   * @param  {Object} options 请求参数
-   */
-  function cookieRequestProxy(options) {
+  // 当前宿主对象（默认在加载时自动识别）
+  var host = api;
+  // 宿主对象上被覆盖的原生方法，便于按配置恢复
+  var originals = {};
+
+  // 配置
+  var config = {
+    requestAlias: 'requestWithCookie',
+    uploadFileAlias: 'uploadFileWithCookie',
+    downloadFileAlias: 'downloadFileWithCookie',
+    // 是否覆盖宿主原生的 request / uploadFile / downloadFile
+    override: true,
+    // 支付宝小程序：宿主自身也支持 cookie（my.request 的 enableCookie），
+    // 与本库用 Storage 模拟的 cookie jar 叠加会出现重复或互相干扰，默认由本库接管
+    alipayEnableCookie: false
+
+    /**
+     * 定义请求 cookie 代理函数
+     * @param  {Object} options 请求参数
+     */
+  };function cookieRequestProxy(options) {
     // 是否启用 cookie（默认 true）
     options.cookie = options.cookie === undefined || !!options.cookie;
     // 数据类型
@@ -2445,8 +2759,13 @@ var cookieStore = function () {
       options.header['Accept'] = 'application/json, text/plain, */*';
     }
 
+    // 支付宝小程序的宿主 cookie 机制交由使用者显式选择，避免与本库的 cookie jar 冲突
+    if (host.platform === 'my' && options.enableCookie === undefined) {
+      options.enableCookie = config.alipayEnableCookie;
+    }
+
     // 判断在小程序环境是否启用 cookie
-    if (api.platform !== 'h5' && options.cookie) {
+    if (host.platform !== 'h5' && options.cookie) {
       // 域名
       var domain = (options.url || '').split('/')[2];
       var path = options.url.split(domain).pop();
@@ -2477,64 +2796,170 @@ var cookieStore = function () {
     return this(options);
   }
 
-  // 绑定新的
-  var requestProxy = cookieRequestProxy.bind(api.request);
-  var uploadFileProxy = cookieRequestProxy.bind(api.uploadFile);
-  var downloadFileProxy = cookieRequestProxy.bind(api.downloadFile);
+  // 绑定当前宿主对象的方法，生成代理方法
+  function getProxies() {
+    return {
+      request: cookieRequestProxy.bind(host.request),
+      uploadFile: cookieRequestProxy.bind(host.uploadFile),
+      downloadFile: cookieRequestProxy.bind(host.downloadFile)
+    };
+  }
 
-  try {
+  var proxies = getProxies();
+
+  /**
+   * 定义属性，宿主对象不允许定义时返回 false
+   * @param  {Object} target 宿主对象
+   * @param  {String} name   属性名
+   * @param  {Any}    value  属性值
+   * @return {Boolean}       是否定义成功
+   */
+  function defineProperty$$1(target, name, value) {
+    try {
+      _Object$defineProperty(target, name, { value: value });
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  /**
+   * 把 cookie 代理安装到宿主对象上
+   *
+   * 小程序插件环境下原生方法不允许被覆盖，此时只注册别名并把原因说明清楚，
+   * 不再像以前那样抛一条无法处理的错误（见 #34）；uni-app APP 端等
+   * 「宿主对象出现得比库更晚」的环境，可以在宿主就绪后再次 install（见 #58）。
+   * @param  {Object} [target] 宿主对象，缺省则使用当前宿主
+   * @return {Object}          安装结果
+   */
+  function install(target) {
+    var _aliasMap;
+
+    if (target && target !== host) {
+      host = target;
+      host.platform = host.platform || detectPlatform(host);
+      setHost(host);
+      proxies = getProxies();
+      // 宿主对象变了，之前记录的原生方法不再适用
+      originals = {};
+    }
+
     // 增加 requestWithCookie、uploadFileWithCookie、downloadFileWithCookie 接口
-    _Object$defineProperties(api, {
-      // request
-      requestWithCookie: {
-        value: requestProxy
-      },
-      // uploadFile
-      uploadFileWithCookie: {
-        value: uploadFileProxy
-      },
-      // downloadFile
-      downloadFileWithCookie: {
-        value: downloadFileProxy
-      }
-    });
+    var aliasFailed = [];
+    var aliasMap = (_aliasMap = {}, _defineProperty(_aliasMap, config.requestAlias, proxies.request), _defineProperty(_aliasMap, config.uploadFileAlias, proxies.uploadFile), _defineProperty(_aliasMap, config.downloadFileAlias, proxies.downloadFile), _aliasMap);
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
+    var _iteratorError = undefined;
 
-    // 使用 requestProxy 覆盖微信原生 request、uploadFile、downloadFile 接口
-    _Object$defineProperties(api, {
-      // request
-      request: {
-        value: requestProxy
-      },
-      // uploadFile
-      uploadFile: {
-        value: uploadFileProxy
-      },
-      // downloadFile
-      downloadFile: {
-        value: downloadFileProxy
+    try {
+      for (var _iterator = _getIterator(_Object$keys(aliasMap)), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+        var name = _step.value;
+
+        if (!name) continue;
+        if (!defineProperty$$1(host, name, aliasMap[name])) aliasFailed.push(name);
       }
-    });
-  } catch (err) {
-    console.error('weapp-cookie: ', err);
+
+      // 覆盖宿主原生方法，失败不影响别名
+    } catch (err) {
+      _didIteratorError = true;
+      _iteratorError = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion && _iterator.return) {
+          _iterator.return();
+        }
+      } finally {
+        if (_didIteratorError) {
+          throw _iteratorError;
+        }
+      }
+    }
+
+    var overrideFailed = [];
+    var methodMap = {
+      request: proxies.request,
+      uploadFile: proxies.uploadFile,
+      downloadFile: proxies.downloadFile
+    };
+    var _iteratorNormalCompletion2 = true;
+    var _didIteratorError2 = false;
+    var _iteratorError2 = undefined;
+
+    try {
+      for (var _iterator2 = _getIterator(_Object$keys(methodMap)), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+        var _name = _step2.value;
+
+        if (config.override) {
+          if (typeof host[_name] !== 'function') continue;
+          if (originals[_name] === undefined) originals[_name] = host[_name];
+          if (!defineProperty$$1(host, _name, methodMap[_name])) overrideFailed.push(_name);
+        } else if (originals[_name] !== undefined) {
+          defineProperty$$1(host, _name, originals[_name]);
+        }
+      }
+    } catch (err) {
+      _didIteratorError2 = true;
+      _iteratorError2 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion2 && _iterator2.return) {
+          _iterator2.return();
+        }
+      } finally {
+        if (_didIteratorError2) {
+          throw _iteratorError2;
+        }
+      }
+    }
+
+    if (overrideFailed.length) {
+      console.warn('weapp-cookie: 当前环境不允许覆盖宿主方法 ' + overrideFailed.join('、') + '（小程序插件安全机制 / uni-app APP 端等），已跳过覆盖，请改用 ' + [config.requestAlias, config.uploadFileAlias, config.downloadFileAlias].join('、') + ' 发起请求，详见 README「插件与 uni-app 环境」');
+    }
+    if (aliasFailed.length) {
+      console.warn('weapp-cookie: 无法在宿主对象上注册 ' + aliasFailed.join('、') + '，可尝试 cookies.config({ requestAlias: "..." }) 指定其它别名');
+    }
+
+    return { aliasFailed: aliasFailed, overrideFailed: overrideFailed };
   }
 
   // 配置
-  cookieStore.config = function (options) {
-    options = _Object$assign({
-      requestAlias: 'requestWithCookie',
-      uploadFileAlias: 'uploadFileWithCookie',
-      downloadFileAlias: 'downloadFileWithCookie'
-    }, options);
+  cookieStore.config = function () {
+    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+    var needInstall = false;
+    var aliasKeys = ['requestAlias', 'uploadFileAlias', 'downloadFileAlias'];
+
+    // 宿主对象：uni-app 等环境下 uni 对象可能晚于本库出现，可在就绪后再安装
+    if (options.host) {
+      install(options.host);
+    }
+
+    if (options.override !== undefined && options.override !== config.override) {
+      config.override = !!options.override;
+      needInstall = true;
+    }
+    if (options.alipayEnableCookie !== undefined) {
+      config.alipayEnableCookie = !!options.alipayEnableCookie;
+    }
+
     // 配置请求别名
-    if (options.requestAlias) {
-      _Object$defineProperty(api, options.requestAlias, { value: requestProxy });
-    }
-    if (options.uploadFileAlias) {
-      _Object$defineProperty(api, options.uploadFileAlias, { value: uploadFileProxy });
-    }
-    if (options.downloadFileAlias) {
-      _Object$defineProperty(api, options.downloadFileAlias, { value: downloadFileProxy });
-    }
+    aliasKeys.forEach(function (key) {
+      if (options[key] === undefined) return;
+      config[key] = options[key];
+      needInstall = true;
+    });
+
+    if (needInstall) install();
+
+    return cookieStore;
+  };
+
+  // 安装到开发时识别到的宿主对象上
+  install();
+
+  // 手动安装到指定宿主对象（同 cookies.config({ host })）
+  cookieStore.install = function (target) {
+    return install(target);
   };
 
   // 返回 cookieStore
