@@ -1,7 +1,9 @@
+// 记录 wx.request 的请求参数，用于测试 wx.request 代理
+let lastRequestOptions = null
 global.wx = {
   setStorageSync: () => {},
   getStorageSync: () => {},
-  request: () => {}
+  request: (options) => { lastRequestOptions = options }
 }
 const assert = require('assert')
 
@@ -85,6 +87,88 @@ describe('weapp-cookies.js', () => {
     cookies.clearCookies()
     let result2 = cookies.getCookiesArray()
     assert.notEqual(result1.length, result2.length)
+  })
+
+})
+
+// 测试域名带端口号的情况：https://github.com/charleslo1/weapp-cookie/issues/43
+describe('weapp-cookies.js 域名带端口号', () => {
+
+  it('cookies.setResponseCookies(setCookieStr, domain) 支持带端口号的域名', () => {
+    cookies.clearCookies()
+    let result = cookies.setResponseCookies('token=1; domain=.b.com; path=/, session_id=s1; path=/; max-age=3600', 'www.b.com:2443')
+    // 带 domain 的 cookie 存到 domain 作用域下，未带 domain 的 cookie 回落到请求域名（不含端口号）
+    assert.equal(true, result.get('.b.com').has('token'))
+    assert.equal(true, result.get('www.b.com').has('session_id'))
+  })
+
+  it('cookies.getRequestCookies(domain) 端口号不参与作用域', () => {
+    cookies.clearCookies()
+    cookies.setResponseCookies('token=1; domain=.b.com; path=/', 'www.b.com:2443')
+
+    // 同级、子级域名可以带上父级域名的 cookie（只支持当前域名与父子域名共享）
+    assert.equal('token=1', cookies.getRequestCookies('www.b.com:2443'))
+    assert.equal('token=1', cookies.getRequestCookies('www.b.com'))
+    assert.equal('token=1', cookies.getRequestCookies('a.b.com:2443'))
+    // 不相关域名不会带上
+    assert.equal('', cookies.getRequestCookies('www.a.com:2443'))
+  })
+
+  it('cookies.getRequestCookies(domain) 同一域名的不同端口共享 cookie', () => {
+    cookies.clearCookies()
+    cookies.setResponseCookies('session_id=s1; path=/; max-age=3600', 'www.b.com:2443')
+
+    assert.equal('session_id=s1', cookies.getRequestCookies('www.b.com:2443'))
+    assert.equal('session_id=s1', cookies.getRequestCookies('www.b.com:8080'))
+    assert.equal('session_id=s1', cookies.getRequestCookies('www.b.com'))
+  })
+
+  it('cookies.set(name, value, options) 支持带端口号的域名', () => {
+    cookies.clearCookies()
+    cookies.set('uid', '100', { domain: 'www.b.com:2443' })
+
+    assert.equal('100', cookies.get('uid', 'www.b.com:2443'))
+    assert.equal('100', cookies.get('uid', 'www.b.com:8080'))
+    assert.equal(true, cookies.has('uid', 'www.b.com'))
+
+    cookies.remove('uid', 'www.b.com:2443')
+    assert.equal(false, cookies.has('uid', 'www.b.com'))
+  })
+
+  it('兼容历史版本按带端口号的域名存储的 cookie', () => {
+    cookies.clearCookies()
+    // 模拟历史版本（未剥离端口号）存储的 cookie
+    cookies.set('legacy', '1', { domain: 'www.b.com:2443' })
+    let cookie = cookies.getCookie('legacy', 'www.b.com')
+    cookie.domain = 'www.b.com:2443'
+    cookies.setCookiesArray([cookie])
+    // 移除不带端口号的存储键，只保留历史版本存储的键
+    cookies.clearCookies('www.b.com')
+
+    assert.equal('legacy=1', cookies.getRequestCookies('www.b.com:2443'))
+  })
+
+})
+
+describe('weapp-cookies.js wx.request 代理', () => {
+
+  it('wx.request 域名带端口号时 cookie 上送正确', () => {
+    cookies.clearCookies()
+
+    // 接口 A：域名带端口号，响应中设置了父级域名 .b.com 的 cookie
+    wx.request({ url: 'https://www.b.com:2443/login', success: function () {} })
+    lastRequestOptions.success({ header: { 'Set-Cookie': 'token=1; domain=.b.com; path=/; max-age=3600' } })
+
+    // 接口 B：同一域名的其它端口、同级与子级域名均能带上该 cookie
+    wx.request({ url: 'https://www.b.com:8080/user', success: function () {} })
+    assert.equal('token=1', lastRequestOptions.header['Cookie'])
+
+    wx.request({ url: 'https://a.b.com:2443/user', success: function () {} })
+    assert.equal('token=1', lastRequestOptions.header['Cookie'])
+
+    // 不相关域名不会误带上
+    wx.request({ url: 'https://www.a.com:2443/user', success: function () {} })
+    assert.equal('', lastRequestOptions.header['Cookie'])
   })
 
 })
