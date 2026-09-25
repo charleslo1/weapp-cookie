@@ -1611,7 +1611,7 @@ var Cookie = function () {
     this.domain = props.domain || '';
     this.path = props.path || '/';
     this.expires = props.expires ? new Date(props.expires) : null;
-    this.maxAge = props.maxAge ? parseInt(props.maxAge) : null;
+    this.maxAge = props.maxAge !== undefined && props.maxAge !== null ? parseInt(props.maxAge) : null;
     this.httpOnly = !!props.httpOnly;
     // 记录时间
     this.dateTime = props.dateTime ? new Date(props.dateTime) : new Date();
@@ -1657,8 +1657,8 @@ var Cookie = function () {
   }, {
     key: 'isExpired',
     value: function isExpired() {
-      // maxAge 为 0，无效
-      if (this.maxAge === 0) {
+      // maxAge 为 0 或负值，无效（RFC 6265：max-age 非正值表示立即过期）
+      if (this.maxAge !== null && this.maxAge <= 0) {
         return true;
       }
       // 存活秒数超出 maxAge，无效
@@ -2404,7 +2404,8 @@ var cookieStore = function () {
         var responseCookies = response.header ? response.header['Set-Cookie'] || response.header['set-cookie'] : '';
         if (responseCookies) {
           // 处理QQ小程序下cookie分隔符问题：https://github.com/charleslo1/weapp-cookie/issues/39
-          responseCookies = responseCookies.replace(/\;([^\s\;]*?(?=\=))/ig, ',$1');
+          // 兼容在ios设备下获取到的set-cookie为数组情况
+          responseCookies = responseCookies.toString().replace(/\;([^\s\;]*?(?=\=))/ig, ',$1');
           // 设置 cookies，以便下次请求带上
           cookieStore.setResponseCookies(responseCookies, domain);
         }
